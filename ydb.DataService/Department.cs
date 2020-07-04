@@ -1,0 +1,124 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using iTR.Lib;
+using  System.Data;
+using ydb.BLL;
+using System.Xml;
+
+namespace ydb.DataService
+{
+    public class Department
+    {
+        private string sql = "";
+        private DataTable dt = null;
+        SQLServerHelper runner = null;
+        XmlDocument doc = null;
+        public Department()
+        {
+            runner = new SQLServerHelper(DataHelper.CnnString);
+            doc = new XmlDocument();
+
+        }
+        public string Upload(DataTable dt)
+        {
+            string result = "";
+            
+            
+           
+           
+
+            try
+            {
+
+                foreach (DataRow dr in dt.Rows)
+                {
+                    if (dr["FUploadOption"].ToString() == "1")//选择了上传的才上传
+                    {
+                        #region  XMLString
+                        string xmlString = @"<UpdateDepartment>
+	                                <AuthCode>1d340262-52e0-413f-b0e7-fc6efadc2ee5</AuthCode>
+	                                <FClassID>d8dbcc3f-dc92-4695-9542-a2ac4f00c162</FClassID>
+	                                <ID>{0}</ID>
+	                                <FName>{1}</FName>
+	                                <FNumber>{2}</FNumber>
+	                                <FParentID>{3}</FParentID>
+	                                <FSortIndex>{4}</FSortIndex>
+	                                <FSupervisorID>{5}</FSupervisorID>
+                                    <Action>{6}</Action>
+                                </UpdateDepartment>";
+                        #endregion
+                        xmlString = string.Format(xmlString, dr["FDeptID"].ToString(), dr["FDeptName"].ToString(), dr["FDeptNumber"].ToString(),
+                                                            dr["FParentID"].ToString(), 0, dr["FSupervisorID"].ToString(), dr["FAction"].ToString());
+
+                        string xmlResult = ydb.DataService.DataHelper.DeptDatanvoke("UpdateDepartment", xmlString);
+                        doc.LoadXml(xmlResult);
+                        if (doc.SelectSingleNode("UpdateDepartment/Result").InnerText == "True")//YRB数据库上传成功，OA-YRB数据插入相应数据
+                        {
+                            if (dr["FACtion"].ToString() == "1")//新建
+                            {
+                                sql = @"INSERT INTO [DataService].[dbo].[YDBDepartment]([FDeptID],[FDeptName],[FDeptNumber],[FSupervisorID] ,[FSupervisorName],[FParentID] ,[FTID],[FParentName])
+                                VALUES('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}') ";
+                                sql = string.Format(sql, dr["FDeptID"].ToString(), dr["FDeptName"].ToString(), dr["FDeptNumber"].ToString(), dr["FSupervisorID"].ToString(),
+                                                    dr["FSupervisorName"].ToString(), dr["FParentID"].ToString(), dr["FTID"].ToString(), dr["FParentName"].ToString());
+                            }
+                            else
+                            {
+                                sql = "Update [DataService].[dbo].[YDBDepartment] Set FParentID='{0}',FParentName ='{1}',FSupervisorID='{2}',FSupervisorName='{3}' Where FDeptID='{4}'";
+                                sql = string.Format(sql, dr["FParentID"].ToString(), dr["FParentName"].ToString(), dr["FSupervisorID"].ToString(), dr["FSupervisorName"].ToString(), dr["FDeptID"].ToString());
+                            }
+                            runner.ExecuteSqlNone(sql);
+                        }
+                        else
+                        {
+                            throw new Exception(doc.SelectSingleNode("UpdateDepartment/Description").InnerText.Trim());
+                        }
+                    }
+                }
+            }
+
+            catch(Exception err)
+            {
+                throw err;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public DataTable  GetUploadDataFromOA()
+        {
+            DataTable dtDept = null;
+
+            sql = @"Delete from [DataService].dbo.OADepartment";
+            runner.ExecuteSqlNone(sql);
+            //将OA数据库中所有FTID（部门ID+主管ID+上级部门ID）在YRB中没有的提取处理（可能是新增或有变化的）
+            sql = @"Insert Into [DataService].dbo.OADepartment(FDeptID,FDeptName,FSupervisorID,FParentID,FLevel,FDeptNumber,FParentName,FSupervisorName,FDetail,FTID)
+                    Select t2.ID As FDeptID,t2.Name As FDeptName,t1.field0004 As FSupervisorID,t1.field0005 As FParentID,t1.field0009 As FLevel,
+                    t1.field0012 As FDeptNumber,t3.Name As FParentName,t4.Name As FSupervisorName,(Case t1.field0010 When -4875734478274671070 Then 1 else  0 end) AS FDetail,
+                    (t1.field0002+'_'+ t1.field0004+'_'+t1.field0005) As FTID 
+                    From formmain_5499 t1
+                    Left Join ORG_UNIT t2 On t1.field0002= t2.ID
+                    Left Join ORG_UNIT t3 On t1.field0005= t3.ID
+                    Left Join ORG_MEMBER t4 On t1.field0004= t4.ID
+                    Where (t1.field0002+'_'+ t1.field0004+'_'+t1.field0005) Not In(Select FTID From [DataService].dbo.[YDBDepartment])
+                    Order by t1.field0009 asc,t1.field0012 ";
+
+            runner.ExecuteSqlNone(sql);
+            sql = @" Select *,'0' As FUploadOption,'1' As FAction from  [DataService].dbo.OADepartment";
+            dtDept = runner.ExecuteSql(sql);
+            foreach(DataRow dr in dtDept.Rows)
+            {
+                sql = "Select FDeptID from [DataService].dbo.YDBDepartment Where  FDeptID ='" + dr["FDeptID"].ToString() + "'";
+                DataTable dt = runner.ExecuteSql(sql);
+                if (dt.Rows.Count > 0)
+                    dr["FAction"] = 2;
+            }
+            return dtDept; 
+        }
+    }
+    
+}
