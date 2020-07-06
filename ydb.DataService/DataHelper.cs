@@ -11,7 +11,7 @@ namespace ydb.DataService
     {
         static string WSURL = @"http://ydb.tenrypharm.com:6060/";
         //static string WSURL = @"http://192.168.20.149:6060/";
-        public static string CnnString = @"Data Source=张帅华\SQLEXPRESS;Initial Catalog=yaodaibao;Persist Security Info=True;User ID=sa;Password=ydbbak2020";
+        public static string CnnString = @"Data Source=192.168.20.15;Initial Catalog=v3x;uid=sa;pwd=Tenry#369520";
         public static string EmployeeInvoke(string mothed,string xmlString)
         {
             string result = "";

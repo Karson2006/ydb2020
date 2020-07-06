@@ -108,25 +108,25 @@ namespace ydb.DataService
                 sql = @"Insert Into [DataService].dbo.[OAAuthData](FInstitutionNumber,FInstitutionNanme,FObjectID,FObjectNumber,FObjectName,FAuthType,FTID,FInstitutionID)
                         Select  t1.field0001 As FInstitutionNumber , t1.field0002 FInstitutionNanme ,t1.field0005 AS FObjectID, t2.CODE  As FObjectNumber,t2.NAME AS FObjectName, 4 As FAuthType,(t1.field0001 +'-' + t2.CODE ) AS FTID,t3.ID AS FInstitutionID  --医药代表 
                         from formmain_5765 t1
-                        Left Join ORG_MEMBER t2 On t1.field0005= t2.ID 
+                        Left Join ORG_MEMBER t2 On t1.field0005=  Cast(t2.ID  AS  nvarchar(20))
                         Left Join formmain_4851 t3 On t1.field0001= t3.field0001
                         Where Isnull(t1.field0005,'')<>'' and  Isnull(t1.field0001,'')<>'' and  Isnull(t1.field0005,'')<>'' and (t1.field0001 +'-' + t2.CODE ) Not In(Select Distinct FTID from [DataService].dbo.[YDBAuthData])
                         union
                         Select   t1.field0001 FInstitutionNumber, t1.field0002 FInstitutionNanme ,t1.field0006 AS FObjectID,  t2.CODE  As FObjectNumber,t2.NAME AS FObjectName, 3 As FAuthType,(t1.field0001 +'-' + t2.CODE ) AS FTID,t3.ID AS FInstitutionID  --招商经理
                         from formmain_5765 t1
-                        Left Join ORG_MEMBER t2 On t1.field0006= t2.ID 
+                        Left Join ORG_MEMBER t2 On t1.field0006=  Cast(t2.ID  AS  nvarchar(20)) 
                         Left Join formmain_4851 t3 On t1.field0001= t3.field0001
                         Where Isnull(t1.field0006,'')<>'' and  Isnull(t1.field0001,'')<>'' and  Isnull(t1.field0006,'')<>''and (t1.field0001 +'-' + t2.CODE ) Not In(Select Distinct FTID from [DataService].dbo.[YDBAuthData])
                         union
                         Select   t1.field0001 FInstitutionNumber, t1.field0002 FInstitutionNanme ,t1.field0007 AS FObjectID,  t2.CODE  As FObjectNumber,t2.NAME AS FObjectName, 5 As FAuthType,(t1.field0001 +'-' + t2.CODE ) AS FTID,t3.ID AS FInstitutionID  --市场经理
                         from formmain_5765 t1
-                        Left Join ORG_MEMBER t2 On t1.field0007= t2.ID 
+                        Left Join ORG_MEMBER t2 On t1.field0007=  Cast(t2.ID  AS  nvarchar(20))
                         Left Join formmain_4851 t3 On t1.field0001= t3.field0001
                         Where Isnull(t1.field0007,'')<>''and  Isnull(t1.field0001,'')<>'' and  Isnull(t1.field0007,'')<>'' and (t1.field0001 +'-' + t2.CODE ) Not In(Select Distinct FTID from [DataService].dbo.[YDBAuthData])
                         union
                         Select   t1.field0001 FInstitutionNumber, t1.field0002 FInstitutionNanme ,t1.field0017 AS FObjectID,  t2.CODE  As FObjectNumber,t2.NAME AS FObjectName, 6 As FAuthType,(t1.field0001 +'-' + t2.CODE )  AS FTID,t3.ID AS FInstitutionID  --地区经理
                         from formmain_5765 t1
-                        Left Join ORG_MEMBER t2 On t1.field0017= t2.ID 
+                        Left Join ORG_MEMBER t2 On t1.field0017=  Cast(t2.ID  AS  nvarchar(20)) 
                         Left Join formmain_4851 t3 On t1.field0001= t3.field0001
                         Where Isnull(t1.field0017,'')<>''and  Isnull(t1.field0001,'')<>'' and  Isnull(t1.field0017,'')<>'' and (t1.field0001 +'-' + t2.CODE ) Not In(Select Distinct FTID from [DataService].dbo.[YDBAuthData]) ";
 
