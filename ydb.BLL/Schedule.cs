@@ -763,14 +763,24 @@ namespace ydb.BLL
                         vals[i] = vals[i].Replace("01", "8c7e241a-8167-48e5-8c02-637e8cd77050");
                         break;
                     case "02":
-                        vals[i] = vals[i].Replace("02", "73e0f637-451f-4f86-a016-27aab3e1a2cf");
+                        vals[i] = vals[i].Replace("02", "DD5AB361-2071-4379-8AC2-ECC182624A67");
                         break;
                     case "03":
-                        vals[i] = vals[i].Replace("03", "520cf28c-efbf-4c25-99aa-f6a8ad3b7407");
+                        vals[i] = vals[i].Replace("03", "4ADF3845-5D53-43C6-88F8-3E400BE8BD7A");
                         break;
                     case "04":
-                        vals[i] = vals[i].Replace("04", "34b4bc2f-cfbd-46cf-89be-a8853dc27280");
+                        vals[i] = vals[i].Replace("04", "296ECFAF-20A6-4D0E-A8C2-1271C1FE0EE2");
                         break;
+                    case "05":
+                        vals[i] = vals[i].Replace("05", "73e0f637-451f-4f86-a016-27aab3e1a2cf");
+                        break;
+                    case "06":
+                        vals[i] = vals[i].Replace("06", "520cf28c-efbf-4c25-99aa-f6a8ad3b7407");
+                        break;
+                    case "98":
+                        vals[i] = vals[i].Replace("98", "34b4bc2f-cfbd-46cf-89be-a8853dc27280");
+                        break;
+                    
                 }
 
             }
