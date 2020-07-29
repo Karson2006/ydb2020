@@ -43,10 +43,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="iTR.Lib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\WS\iTR.Lib.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -71,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ReportDataInvoke.asmx" />
+    <Content Include="SCMInvoke.asmx" />
     <Content Include="WorkReportInvoke.asmx" />
     <Content Include="AuthInvoke.asmx" />
     <Content Include="CallInvoke.asmx" />
@@ -91,6 +88,10 @@
     </Compile>
     <Compile Include="ReportDataInvoke.asmx.cs">
       <DependentUpon>ReportDataInvoke.asmx</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SCMInvoke.asmx.cs">
+      <DependentUpon>SCMInvoke.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="WorkReportInvoke.asmx.cs">
@@ -145,6 +146,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\iTR\iTR.Lib\iTR.Lib.csproj">
+      <Project>{603e8302-8f06-479f-a3f4-adf2a0a2537d}</Project>
+      <Name>iTR.Lib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ydb.BLL.Works\ydb.BLL.Works.csproj">
+      <Project>{79c08865-be69-496e-ac15-6eec727a0a65}</Project>
+      <Name>ydb.BLL.Works</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ydb.BLL\ydb.BLL.csproj">
       <Project>{958e860a-6ff4-4cb2-b49a-869dd7640c59}</Project>
       <Name>ydb.BLL</Name>

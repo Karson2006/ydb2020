@@ -32,10 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="iTR.Lib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Release\iTR.Lib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -118,6 +114,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\iTR\iTR.Lib\iTR.Lib.csproj">
+      <Project>{603e8302-8f06-479f-a3f4-adf2a0a2537d}</Project>
+      <Name>iTR.Lib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ydb.DataService\ydb.DataService.csproj">
       <Project>{62168d42-e2da-4ec8-82c7-355f46191dfc}</Project>
       <Name>ydb.DataService</Name>

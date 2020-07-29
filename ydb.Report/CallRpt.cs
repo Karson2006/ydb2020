@@ -7,7 +7,9 @@ using System.Xml;
 using iTR.Lib;
 using System.Data;
 using ydb.BLL;
-
+using System.Configuration;
+using System.Web.Services;
+using System.Web;
 
 namespace ydb.Report
 {
@@ -185,8 +187,12 @@ namespace ydb.Report
                 excel.Range[excel.Cells[1, 1], excel.Cells[1, column_num]].Value = headArry;
                 //把数组中的数据放到Excel中
                 excel.Range[excel.Cells[2, 1], excel.Cells[row_num + 1, column_num]].Value = dataArry;
-                savePath = AppDomain.CurrentDomain.BaseDirectory + "Files\\";
-                excelworkBook.SaveAs(savePath + fileName + ".xlsx");
+                string path = System.Configuration.ConfigurationManager.AppSettings["Path"];
+                string fullpath = System.Web.HttpContext.Current.Server.MapPath(path);
+
+                savePath = fullpath+"\\" + fileName + ".xlsx";
+             
+                excelworkBook.SaveAs(savePath);
                 excelworkBook.Close();
                 excel.Quit();
             }

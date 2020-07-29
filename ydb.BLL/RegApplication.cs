@@ -633,8 +633,8 @@ namespace ydb.BLL
                     Random ran = new Random();
                     vCode = ran.Next(1000, 9999).ToString();
                 }
-               
-                if(AliDayuSMS.SendSms(vCode, mobile)=="1" && dt.Rows.Count ==0)//发送成功,且不存在该记录
+                AliDayuSMS smsSender = new AliDayuSMS();
+                if (smsSender.SendSms(vCode, mobile)=="1" && dt.Rows.Count ==0)//发送成功,且不存在该记录
                 {
                     DateTime expireTime = DateTime.Now.AddMinutes(5);
                     sql = "Insert Into VCodes(FMobile,FCode)Values('" + mobile + "','" + vCode + "')";

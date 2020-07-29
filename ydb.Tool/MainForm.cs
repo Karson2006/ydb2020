@@ -53,6 +53,17 @@ namespace ydb.Tool
                 MessageBox.Show(err.Message, "系统提示");
             }
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            iTR.Lib.SQLServerHelper runner = new iTR.Lib.SQLServerHelper(ydb.DataService.DataHelper.CnnString);
+            string sql = " Select * from v3x.dbo.ORG_MEMBER";
+            DataTable dt = runner.ExecuteSql(sql);
+            iTR.Lib.FileLogger.WriteLog(DateTime.Now.ToString() + " ExportToExcel Start",0); 
+            iTR.Lib.ExcelHelper.ExportToExcel(dt, @"D:\test.xlsx");
+            iTR.Lib.FileLogger.WriteLog(DateTime.Now.ToString() + " ExportToExcel End",0);
+
+        }
     }
     
 }
