@@ -31,20 +31,32 @@ namespace ydb.BLL.Works
                 int year, weekofyear;
                 Common.GetWeekIndexOfYear(mainform["FWeekIndex"], out year,  out weekofyear);
                 mainform["FYear"] = year.ToString();
-                mainform["FWheekIndex"] = weekofyear.ToString();
+                mainform["FWeekIndex"] = weekofyear.ToString();
 
                 SQLServerHelper runner = new SQLServerHelper();
 
+               
+
                 if (mainform["FID"] == "-1" || mainform["FID"].Trim().Length == 0)
                 {
-                    id = Guid.NewGuid().ToString();
-                    sql = "Insert Into HospitalStock(FID) Values('" + id + "')";
-                    runner.ExecuteSqlNone(sql);
+                    //判断是否已存在相应的本周进销存记录
+                    sql = "Select FID from HospitalStock Where FYear='{0}' and  FWeekIndex='{1}' and FEmployeeID ='{2}' and  FHospitalID='{3}'";
+                    sql = string.Format(sql, mainform["FYear"], mainform["FWeekIndex"], mainform["FEmployeeID"], mainform["FHospitalID"]);
+                    DataTable dt = runner.ExecuteSql(sql);
+                    if (dt.Rows.Count > 0)
+                    {
+                        mainform["FID"] = dt.Rows[0]["FID"].ToString();
+                        id = mainform["FID"];
+                    }
+                    else
+                    {
+                        id = Guid.NewGuid().ToString();
+                        sql = "Insert Into HospitalStock(FID) Values('" + id + "')";
+                        runner.ExecuteSqlNone(sql);
+                    }
                 }
                 else
-                {
                     id = mainform["FID"];
-                }
 
                 foreach (string key in mainform.Keys)
                 {
@@ -102,8 +114,18 @@ namespace ydb.BLL.Works
                 {
                     int year, weekofYear;
                     Common.GetWeekIndexOfYear(param["FWeekIndex"], out year, out weekofYear);
-                    where = "t2.FEmployeeID='{0}' and FHospitalID ='{1}' and  t2.FWeekIndex='{2}' and t2.FYear ='{3}'";
-                    where = string.Format(where, param["FEmployeeID"], param["FHospitalID"], weekofYear, year); 
+                    param["FYear"] = year.ToString();
+                    param["FWeekIndex"] = weekofYear.ToString();
+                    foreach (string key in param.Keys)
+                    {
+                        if (key.ToUpper() == "FID" ||   key.ToUpper() == "FPRODUCTID" ) continue;
+                        if (param[key].Trim().Length > 0)
+                        {
+                            where =  where.Trim().Length==0 ? "t2."+key + "='" + param[key] + "' " : where + " and " + "t2."+key + "='" + param[key] + "' ";
+                        }
+                    }
+                    //where = "t2.FEmployeeID='{0}' and FHospitalID ='{1}' and  t2.FWeekIndex='{2}' and t2.FYear ='{3}'";
+                    //where = string.Format(where, param["FEmployeeID"], param["FHospitalID"], weekofYear, year); 
                 }
                 sql = @"Select t2.FDate,t2.FEmployeeID,t2.FHospital,t2.FHospitalID,t2.FID,t2.FWeekIndex,t2.FYear,Isnull(t3.FName,'') AS FEmployeeName
                                 From HospitalStock t2 
@@ -119,6 +141,11 @@ namespace ydb.BLL.Works
                                 Left Join HospitalStock t2 On t1.FFormmainID = t2.FID
                                 Left Join t_Items t3 On t1.FProductID = t3.FID";
                     sql = sql + "  Where  FFormmainID='" + id + "'";
+                    if (param.ContainsKey("FProductID"))
+                    {
+                        if (param["FProductID"].Trim().Length > 0)
+                            sql = sql + "  and  FProductID ='" + param["FProductID"] + "'";
+                    }
 
                     DataTable sondt = runner.ExecuteSql(sql);
 
