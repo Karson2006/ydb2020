@@ -26,7 +26,7 @@ namespace ydb.BLL.Works
             try
             {
                 List<Dictionary<string, string>> formson = new List<Dictionary<string, string>>();
-                Dictionary<string, string> mainform = Common.GetFieldValuesFromXmlEx(xmlString, "UpdateHospitalStock",out formson);
+                Dictionary<string, string> mainform = Common.GetFieldValuesFromXmlEx(xmlString, "UpdateHospitalStock",out formson,"1","");
                 //获取周序数
                 int year, weekofyear;
                 Common.GetWeekIndexOfYear(mainform["FWeekIndex"], out year,  out weekofyear);
