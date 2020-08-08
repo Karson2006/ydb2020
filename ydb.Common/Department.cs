@@ -645,14 +645,14 @@ namespace ydb.BLL
                     sql = @"Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'1' As Detail,t2.FID AS LeaderID
                             From t_Items t1
                             Left Join t_Employees t2 On t1.FID = t2.FID  
-                            Where t2.FDeptID In ('{0}')
+                            Where t2.FDeptID In ('{0}') or t2.FLeaderList like '%{1}%'
                             Union
                             Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'0' As Detail,t2.FSupervisorID AS LeaderID
                             From t_Items t1
                             Left Join t_Departments t2 On t1.FID = t2.FID  
                             Where t1.FParentID In ('{0}')";
 
-                    sql = string.Format(sql, dr["FID"].ToString());
+                    sql = string.Format(sql, dr["FID"].ToString(),leaderID);
 
                     DataTable memberDt = runner.ExecuteSql(sql);
                     foreach (DataRow memberRow in memberDt.Rows)
@@ -701,17 +701,23 @@ namespace ydb.BLL
             if (deptIDs.Length >0)
             {
                 deptIDs=deptIDs.Replace("|","','"); 
-                sql = "Select FID from t_Employees Where FIsDeleted =0 and FDeptID in ('{0}')";
-                sql = string.Format(sql, deptIDs);
-                dt = runner.ExecuteSql(sql);
-                
-                foreach (DataRow row in dt.Rows)
-                {
-                    if (memberIDs.Length ==0)
-                        memberIDs = row["FID"].ToString();
-                    else
-                        memberIDs = memberIDs + "|" + row["FID"].ToString();
-                }
+                sql = "Select FID from t_Employees Where FIsDeleted =0 and FDeptID in ('{0}')  or  FLeaderList like '%{1}%'";
+                sql = string.Format(sql, deptIDs, leaderID);
+            }
+            else
+            {
+                sql = "Select FID from t_Employees Where FIsDeleted =0 and   FLeaderList like '%{0}%'";
+                sql = string.Format(sql,  leaderID);
+            }
+          
+            dt = runner.ExecuteSql(sql);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                if (memberIDs.Length == 0)
+                    memberIDs = row["FID"].ToString();
+                else
+                    memberIDs = memberIDs + "|" + row["FID"].ToString();
             }
 
             return memberIDs ;

@@ -92,7 +92,8 @@ namespace ydb.BLL.Works
         public string GetHospitalStockDetail(string xmlString)
         {
             string sql = "", where = "",id="";
-            string result = "";
+            string result = "", weekIndex = "";
+            int year, weekofYear=1;
 
             result = "<GetHospitalStockDetail>" +
                          "<Result>False</Result>" +
@@ -112,7 +113,7 @@ namespace ydb.BLL.Works
                 }
                 else
                 {
-                    int year, weekofYear;
+                    weekIndex = param["FWeekIndex"];
                     Common.GetWeekIndexOfYear(param["FWeekIndex"], out year, out weekofYear);
                     param["FYear"] = year.ToString();
                     param["FWeekIndex"] = weekofYear.ToString();
@@ -124,8 +125,6 @@ namespace ydb.BLL.Works
                             where =  where.Trim().Length==0 ? "t2."+key + "='" + param[key] + "' " : where + " and " + "t2."+key + "='" + param[key] + "' ";
                         }
                     }
-                    //where = "t2.FEmployeeID='{0}' and FHospitalID ='{1}' and  t2.FWeekIndex='{2}' and t2.FYear ='{3}'";
-                    //where = string.Format(where, param["FEmployeeID"], param["FHospitalID"], weekofYear, year); 
                 }
                 sql = @"Select t2.FDate,t2.FEmployeeID,t2.FHospital,t2.FHospitalID,t2.FID,t2.FWeekIndex,t2.FYear,Isnull(t3.FName,'') AS FEmployeeName
                                 From HospitalStock t2 
@@ -138,7 +137,6 @@ namespace ydb.BLL.Works
                     id = maindt.Rows[0]["FID"].ToString() ;
                     sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName,t1.FStock_IB,t1.FSaleAmount,t1.FStock_EB,t1.FStock_IN
                                 From  HospitalStock_Detail t1
-                                Left Join HospitalStock t2 On t1.FFormmainID = t2.FID
                                 Left Join t_Items t3 On t1.FProductID = t3.FID";
                     sql = sql + "  Where  FFormmainID='" + id + "'";
                     if (param.ContainsKey("FProductID"))
@@ -148,6 +146,26 @@ namespace ydb.BLL.Works
                     }
 
                     DataTable sondt = runner.ExecuteSql(sql);
+                    if(weekIndex =="0" && sondt.Rows.Count ==0 && param.ContainsKey("FProductID"))//没有本周进销存
+                    {
+                        Common.GetWeekIndexOfYear("-1", out year, out weekofYear);
+
+                        sql = @"Select t2.FDate,t2.FEmployeeID,t2.FHospital,t2.FHospitalID,t2.FID,t2.FWeekIndex,t2.FYear,Isnull(t3.FName,'') AS FEmployeeName
+                                From HospitalStock t2 
+                                Left Join t_Items t3 On t2.FEmployeeID = t3.FID  
+                                Where t2.FEmployeeID='{0}' and t2.FYear={1} and  t2.FWeekIndex='{2}' and  t2.FHospitalID='{3}'";
+                        sql = string.Format(sql, param["FEmployeeID"], year, weekofYear.ToString(), param["FHospitalID"]);
+                        maindt = runner.ExecuteSql(sql);
+                        if (maindt.Rows.Count > 0)
+                        {
+                            sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName,t1.FStock_IB,t1.FSaleAmount,t1.FStock_EB,t1.FStock_IN
+                                From  HospitalStock_Detail t1
+                                Left Join t_Items t3 On t1.FProductID = t3.FID
+                                Where t1.FFormmainID='{0}' and t1.FProductID='{1}'";
+                            sql = string.Format(sql, maindt.Rows[0]["FID"].ToString() , param["FProductID"]);
+                            sondt = runner.ExecuteSql(sql);
+                        }
+                    }
 
                     result = Common.DataTableToXmlEx(maindt, sondt, "GetHospitalStockDetail");
                 }
