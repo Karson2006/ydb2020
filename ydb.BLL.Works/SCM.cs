@@ -94,6 +94,8 @@ namespace ydb.BLL.Works
             string sql = "", where = "",id="";
             string result = "", weekIndex = "";
             int year, weekofYear=1;
+            DataRow newRow = null;
+            DataTable maindt,sondt;
 
             result = "<GetHospitalStockDetail>" +
                          "<Result>False</Result>" +
@@ -130,11 +132,12 @@ namespace ydb.BLL.Works
                                 From HospitalStock t2 
                                 Left Join t_Items t3 On t2.FEmployeeID = t3.FID  Where  {0}";
                 sql = string.Format(sql, where);
-
-                DataTable maindt = runner.ExecuteSql(sql);
-                if(maindt.Rows.Count >0)
+                maindt = runner.ExecuteSql(sql);
+           
+                if (maindt.Rows.Count > 0)//本周有主表数据
                 {
-                    id = maindt.Rows[0]["FID"].ToString() ;
+                    id = maindt.Rows[0]["FID"].ToString();
+                    //读取本周的记录
                     sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName,t1.FStock_IB,t1.FSaleAmount,t1.FStock_EB,t1.FStock_IN
                                 From  HospitalStock_Detail t1
                                 Left Join t_Items t3 On t1.FProductID = t3.FID";
@@ -144,32 +147,124 @@ namespace ydb.BLL.Works
                         if (param["FProductID"].Trim().Length > 0)
                             sql = sql + "  and  FProductID ='" + param["FProductID"] + "'";
                     }
-
-                    DataTable sondt = runner.ExecuteSql(sql);
+                    sondt = runner.ExecuteSql(sql);
+                    //本周没有记录，读取上周的
                     if(weekIndex =="0" && sondt.Rows.Count ==0 && param.ContainsKey("FProductID"))//没有本周进销存
                     {
                         Common.GetWeekIndexOfYear("-1", out year, out weekofYear);
-
                         sql = @"Select t2.FDate,t2.FEmployeeID,t2.FHospital,t2.FHospitalID,t2.FID,t2.FWeekIndex,t2.FYear,Isnull(t3.FName,'') AS FEmployeeName
                                 From HospitalStock t2 
                                 Left Join t_Items t3 On t2.FEmployeeID = t3.FID  
                                 Where t2.FEmployeeID='{0}' and t2.FYear={1} and  t2.FWeekIndex='{2}' and  t2.FHospitalID='{3}'";
                         sql = string.Format(sql, param["FEmployeeID"], year, weekofYear.ToString(), param["FHospitalID"]);
                         maindt = runner.ExecuteSql(sql);
-                        if (maindt.Rows.Count > 0)
+                        if (maindt.Rows.Count > 0)//上周有主表数据
                         {
-                            sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName,t1.FStock_IB,t1.FSaleAmount,t1.FStock_EB,t1.FStock_IN
+                            sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName, 0 AS FSaleAmount,t1.FStock_EB  As FStock_IB ,0 As FStock_EB, 0 As FStock_IN
                                 From  HospitalStock_Detail t1
                                 Left Join t_Items t3 On t1.FProductID = t3.FID
                                 Where t1.FFormmainID='{0}' and t1.FProductID='{1}'";
                             sql = string.Format(sql, maindt.Rows[0]["FID"].ToString() , param["FProductID"]);
                             sondt = runner.ExecuteSql(sql);
+                            if(sondt.Rows.Count ==0)//上周子表也没有数据
+                            {
+                                newRow = sondt.NewRow();
+                                newRow["FProductID"] = param["FProductID"];
+                                newRow["FProductName"] ="";
+                                newRow["FStock_IB"] = 0;
+                                newRow["FSaleAmount"] = 0;
+                                newRow["FStock_EB"] = 0;
+                                newRow["FStock_IN"] = 0;
+
+                                sondt.Rows.Add(newRow);
+                            }
+                        }
+                        else// 上周主表也没有数据
+                        {
+                            sql = @"Select t2.FEmployeeID,t2.FHospital,t2.FHospitalID,t2.FID,t2.FWeekIndex,t2.FYear,Isnull(t3.FName,'') AS FEmployeeName
+                                         From HospitalStock t2
+                                        Left Join t_Items t3 On t2.FEmployeeID = t3.FID  Where 1=0";
+                            maindt = runner.ExecuteSql(sql);
+                            newRow = maindt.NewRow();
+                            newRow["FID"] ="";
+                            newRow["FEmployeeID"] = param["FEmployeeID"];
+                            newRow["FHospitalID"] = param["FHospitalID"];
+                            maindt.Rows.Add(newRow);
+
+                            sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName,t1.FStock_IB,t1.FSaleAmount,t1.FStock_EB,t1.FStock_IN
+                                      From  HospitalStock_Detail t1
+                                      Left Join t_Items t3 On t1.FProductID = t3.FID Where 1=0";
+                            sondt = runner.ExecuteSql(sql);
+
+                            newRow = sondt.NewRow();
+                            newRow["FProductID"] = param["FProductID"];
+                            newRow["FProductName"] = "";
+                            newRow["FStock_IB"] = 0;
+                            newRow["FSaleAmount"] = 0;
+                            newRow["FStock_EB"] = 0;
+                            newRow["FStock_IN"] = 0;
+
+                            sondt.Rows.Add(newRow);
                         }
                     }
-
-                    result = Common.DataTableToXmlEx(maindt, sondt, "GetHospitalStockDetail");
                 }
+                else//本周没有数据,读取上周数据
+                {
+                    Common.GetWeekIndexOfYear("-1", out year, out weekofYear);
+                    sql = @"Select t2.FDate,t2.FEmployeeID,t2.FHospital,t2.FHospitalID,t2.FID,t2.FWeekIndex,t2.FYear,Isnull(t3.FName,'') AS FEmployeeName
+                                From HospitalStock t2 
+                                Left Join t_Items t3 On t2.FEmployeeID = t3.FID  
+                                Where t2.FEmployeeID='{0}' and t2.FYear={1} and  t2.FWeekIndex='{2}' and  t2.FHospitalID='{3}'";
+                    sql = string.Format(sql, param["FEmployeeID"], year, weekofYear.ToString(), param["FHospitalID"]);
+                    maindt = runner.ExecuteSql(sql);
+                    if (maindt.Rows.Count > 0)//上周有主表数据
+                    {
+                        sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName, 0 As FSaleAmount,t1.FStock_EB As FStock_IB,0 As FStock_IN,0 As FStock_EB
+                                From  HospitalStock_Detail t1
+                                Left Join t_Items t3 On t1.FProductID = t3.FID
+                                Where t1.FFormmainID='{0}' and t1.FProductID='{1}'";
+                        sql = string.Format(sql, maindt.Rows[0]["FID"].ToString(), param["FProductID"]);
+                        sondt = runner.ExecuteSql(sql);
+                        if (sondt.Rows.Count == 0)//上周子表也没有数据
+                        {
+                            newRow = sondt.NewRow();
+                            newRow["FProductID"] = param["FProductID"];
+                            newRow["FProductName"] = "";
+                            newRow["FStock_IB"] = 0;
+                            newRow["FSaleAmount"] = 0;
+                            newRow["FStock_EB"] = 0;
+                            newRow["FStock_IN"] = 0;
+                            sondt.Rows.Add(newRow);
+                        }
+                    }
+                    else// 上周主表也没有数据
+                    {
+                        sql = @"Select t2.FEmployeeID,t2.FHospital,t2.FHospitalID,t2.FID,t2.FWeekIndex,t2.FYear,Isnull(t3.FName,'') AS FEmployeeName
+                                         From HospitalStock t2
+                                        Left Join t_Items t3 On t2.FEmployeeID = t3.FID  Where 1=0";
+                        maindt = runner.ExecuteSql(sql);
+                        newRow = maindt.NewRow();
+                        newRow["FID"] = "";
+                        newRow["FEmployeeID"] = param["FEmployeeID"];
+                        newRow["FHospitalID"] = param["FHospitalID"];
+                        maindt.Rows.Add(newRow);
 
+                        sql = @"Select  t1.FProductID,Isnull(t3.FName,'') AS  FProductName,t1.FStock_IB,t1.FSaleAmount,t1.FStock_EB,t1.FStock_IN
+                                      From  HospitalStock_Detail t1
+                                      Left Join t_Items t3 On t1.FProductID = t3.FID Where 1=0";
+                        sondt = runner.ExecuteSql(sql);
+                        newRow = sondt.NewRow();
+                        newRow["FProductID"] = param["FProductID"];
+                        newRow["FProductName"] = "";
+                        newRow["FStock_IB"] = 0;
+                        newRow["FSaleAmount"] = 0;
+                        newRow["FStock_EB"] = 0;
+                        newRow["FStock_IN"] = 0;
+
+                        sondt.Rows.Add(newRow);
+                    }
+                }
+                result = Common.DataTableToXmlEx(maindt, sondt, "GetHospitalStockDetail");
             }
             catch (Exception err)
             {

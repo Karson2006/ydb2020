@@ -613,7 +613,7 @@ namespace ydb.BLL
         {
 
             string result = "", sql = "", leaderID = "";
-           
+            string colName = "";
 
             SQLServerHelper runner;
             result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetTeamMemberList>" +
@@ -640,27 +640,50 @@ namespace ydb.BLL
                 doc.LoadXml(result);
                 XmlNode pNode = doc.SelectSingleNode("GetTeamMemberList/DataRows");
                 doc.SelectSingleNode("GetTeamMemberList/Result").InnerText = "True";
-                foreach( DataRow  dr in deptDt.Rows)
+
+                sql = @"Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'1' As Detail,t2.FID AS LeaderID
+                            From t_Items t1
+                            Left Join t_Employees t2 On t1.FID = t2.FID  
+                            Where t2.FLeaderList like '%{0}%'";
+                sql = string.Format(sql, leaderID);
+
+                DataTable memberDt = runner.ExecuteSql(sql);
+                foreach (DataRow memberRow in memberDt.Rows)
+                {
+                    XmlNode cNode = doc.CreateElement("DataRow");
+                    pNode.AppendChild(cNode);
+                    vNode = null;
+                   
+                    foreach (DataColumn col in memberDt.Columns)
+                    {
+                        colName = col.Caption;
+                        vNode = doc.CreateElement(colName);
+                        vNode.InnerText = memberRow[colName].ToString();
+                        cNode.AppendChild(vNode);
+                    }
+                }
+
+                foreach ( DataRow  dr in deptDt.Rows)
                 {
                     sql = @"Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'1' As Detail,t2.FID AS LeaderID
                             From t_Items t1
                             Left Join t_Employees t2 On t1.FID = t2.FID  
-                            Where t2.FDeptID In ('{0}') or t2.FLeaderList like '%{1}%'
+                            Where t2.FDeptID In ('{0}') 
                             Union
                             Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'0' As Detail,t2.FSupervisorID AS LeaderID
                             From t_Items t1
                             Left Join t_Departments t2 On t1.FID = t2.FID  
                             Where t1.FParentID In ('{0}')";
 
-                    sql = string.Format(sql, dr["FID"].ToString(),leaderID);
+                    sql = string.Format(sql, dr["FID"].ToString());
 
-                    DataTable memberDt = runner.ExecuteSql(sql);
+                    memberDt = runner.ExecuteSql(sql);
                     foreach (DataRow memberRow in memberDt.Rows)
                     {
                         XmlNode cNode = doc.CreateElement("DataRow");
                         pNode.AppendChild(cNode);
                         vNode = null;
-                        string colName = "";
+                        colName = "";
                         foreach (DataColumn col in memberDt.Columns)
                         {
                             colName = col.Caption;
@@ -670,7 +693,8 @@ namespace ydb.BLL
                         }
                     }
                 }
-                
+
+         
 
                result = doc.OuterXml;
                 
