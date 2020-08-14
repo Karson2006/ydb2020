@@ -1791,10 +1791,10 @@ namespace ydb.BLL
         public string GetMyProductList(string xmlString)
         {
             string val ="";
-            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetMyProdutList><DataRows>" +
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetMyProductList><DataRows>" +
                             "<Result>False</Result>" +
                             "<Description></Description>" +
-                            "</GetMyProdutList>";
+                            "</GetMyProductList>";
 
             try
             {

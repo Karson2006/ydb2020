@@ -68,7 +68,7 @@ namespace ydb.WebService
         }
         #endregion
 
-        #region GetMonthReportList
+        #region GetHospitalStockDetail
         [WebMethod]
         public string GetHospitalStockDetail(string callType, string xmlMessage)
         {
@@ -109,9 +109,49 @@ namespace ydb.WebService
         }
         #endregion
 
-        
+        #region GetHospitalStockList
+        [WebMethod]
+        public string GetHospitalStockList(string callType, string xmlMessage)
+        {
+            string result = "<" + callType + ">" +
+                          "<Result>False</Result>" +
+                          "<Description></Description></" + callType + ">";
+            string logID = Guid.NewGuid().ToString();
 
-        
+            try
+            {
+
+                FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
+
+                if (Helper.CheckAuthCode(callType, xmlMessage))//数据校验通过
+                {
+                    SCM s = new SCM();
+                    result = s.GetHospitalStockList(xmlMessage);
+
+                }
+            }
+            catch (Exception err)
+            {
+                result = "<" + callType + ">" +
+                          "<Result>False</Result>" +
+                          "<Description>" + err.Message + "</Description></" + callType + ">";
+            }
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
+            return result;
+        }
+
+        [WebMethod]
+        public string GetHospitalStockListJson(string callType, string JsonMessage)
+        {
+            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, callType);
+            string result = GetHospitalStockList(callType, xmlString);
+            result = iTR.Lib.Common.XML2Json(result, callType);
+            return result;
+        }
+        #endregion
+
+
+
     }
-    
+
 }

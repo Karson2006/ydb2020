@@ -49,6 +49,10 @@
       <Project>{603e8302-8f06-479f-a3f4-adf2a0a2537d}</Project>
       <Name>iTR.Lib</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ydb.Common\ydb.Common.BLL.csproj">
+      <Project>{bfc4eadf-20ad-4886-a7d8-191221965ad3}</Project>
+      <Name>ydb.Common.BLL</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
