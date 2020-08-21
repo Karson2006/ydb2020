@@ -365,6 +365,15 @@ namespace ydb.BLL
                         valueString = valueString + "FMobile ='" + val + "',";
                 }
 
+                
+                if (action=="1")
+                {
+                    vNode = doc.SelectSingleNode("UpdateItem/FNumber");
+                    val = Common.GetNumber("Doctor","FNumber");
+                    vNode.InnerText = val;
+                }
+
+
                 vNode = doc.SelectSingleNode("UpdateItem/FCompanyID");
                 if (vNode != null)
                 {
