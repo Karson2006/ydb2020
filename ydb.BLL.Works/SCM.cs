@@ -339,12 +339,13 @@ namespace ydb.BLL.Works
 
                 sql = @"  Select t2.FProductID,Isnull(t4.FName, '') AS FProductName, t1.FHospitalID,Isnull(t3.FName, '') AS FHospitalName,
                                 t2.FEmployeeID,Isnull(t5.FName, '') AS FEmployeeName, t1.FStock_IB,t1.FStock_IN,t1.FSaleAmount,t1.FStock_EB,t2.FWeekIndex,
-                              (t2.FEmployeeID + '_' + t2.FProductID + '_' + Convert(varchar(10), t2.FWeekIndex)) As FDataRowKey
+                              (t2.FEmployeeID + '_' + t2.FProductID + '_' ++ Convert(varchar(10), t2.FWeekIndex)) As FDataRowKey
                               from HospitalStock_Detail t1
                               Left Join HospitalStock t2 On t1.FFormmainID = t2.FID
                               Left Join t_Items t3 On t1.FHospitalID = t3.FID
                               Left Join t_Items t4 On t2.FProductID = t4.FID
                               Left Join t_Items t5 On t2.FEmployeeID = t5.FID";
+
                 if (param.ContainsKey("FWeekIndex") && param["FWeekIndex"].Trim().Length > 0)
                 {
                     weekIndex = param["FWeekIndex"];
