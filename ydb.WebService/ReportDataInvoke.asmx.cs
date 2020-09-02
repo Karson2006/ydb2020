@@ -4,6 +4,8 @@ using System.Linq;
 using System.Web;
 using System.Web.Services;
 using iTR.Lib;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using ydb.Report;
 
 namespace ydb.WebService
@@ -22,9 +24,9 @@ namespace ydb.WebService
         [WebMethod]
         public string GetCallReport1(string xmlMessage)
         {
-           string result ="<GetData>" +
-                          "<Result>False</Result>" +
-                          "<Description></Description></GetData>";
+            string result = "<GetData>" +
+                           "<Result>False</Result>" +
+                           "<Description></Description></GetData>";
             string logID = Guid.NewGuid().ToString();
             try
             {
@@ -50,10 +52,10 @@ namespace ydb.WebService
 
 
         [WebMethod]
-        public string GetCallReport1Json( string JsonMessage)
+        public string GetCallReport1Json(string JsonMessage)
         {
             string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetData");
-            string result = GetCallReport1( xmlString);
+            string result = GetCallReport1(xmlString);
             result = iTR.Lib.Common.XML2Json(result, "GetData");
             return result;
         }
@@ -113,7 +115,7 @@ namespace ydb.WebService
                     CallRpt rpt = new CallRpt();
                     result = rpt.ExportCallReport(xmlMessage);
                 }
- 
+
             }
             catch (Exception err)
             {
@@ -135,5 +137,43 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetData");
             return result;
         }
+        [WebMethod]
+        public string GetPersonSummaryReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonSummaryReport");
+            return result;
+        }
+
+        //报表统一入口
+        public string GetCompassReport(string JsonMessage, string callType)
+        {
+            CompassRpt compass = new CompassRpt();
+            string result = "{\"R-1\":{\"Result\";\"R-Bool\",\"Description\":\"R-2\",\"DataRows\":R-3}}";
+            result = result.Replace("R-1", callType).Replace("R-Bool","False");
+            string logID = Guid.NewGuid().ToString();
+            
+            try
+            {
+                FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", callType);
+                if (Helper.CheckAuthCode("GetData", JsonMessage, "json"))
+                {
+                    string rowresult = "";
+                    if (callType == "GetPersonSummaryReport")
+                    {
+                        CompassRpt routeRpt = new CompassRpt();
+                        rowresult = routeRpt.GetPersonPerReport(JsonMessage);
+                        result = result.Replace("R-1", callType).Replace("R-Bool","True").Replace("R-2","").Replace("R-3", rowresult);
+                    }
+                }
+            }
+            catch (Exception err)
+            {
+                result = result.Replace("R-1", callType).Replace("R-2", err.Message).Replace("R-3","");
+            }
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
+            return result;
+        }
     }
+
 }

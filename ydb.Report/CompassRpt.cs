@@ -13,12 +13,13 @@ namespace ydb.Report
 {
     public class CompassRpt
     {
-        public CompassRpt()
+        public void test()
         {
         }
         public string GetPersonPerReport(string dataString)
         {
-            dataString = "{\"FWeekIndex\":\"10\",\"AuthCode\":\"1d340262-52e0-413f-b0e7-fc6efadc2ee5\",\"EmployeeID\":\"4255873149499886263\",\"BeginDate\":\"2020-08-05\",\"EndDate\":\"2020-08-31\"}";
+            string Rowcontent = "\"DataRow\": {\"DataSets\":[{\"values\":[{ \"value\": \"R-1\", \"label\": \"\"},{ \"value\": \"R-2\", \"label\":\"\"}],label:\"\",config: \"R-3\"}],\"name\": \"R-4\",Index:\"R-5\",value:\"R-6\",\"Count\":\"R-7\",\"startTime\":\"R-8\",\"endTime\":\"R-9\"}";
+            //dataString = "{\"FWeekIndex\":\"10\",\"AuthCode\":\"1d340262-52e0-413f-b0e7-fc6efadc2ee5\",\"EmployeeID\":\"4255873149499886263\",\"BeginDate\":\"2020-08-05\",\"EndDate\":\"2020-08-31\"}";
             try
             {
                 RouteEntity routeEntity = JsonConvert.DeserializeObject<RouteEntity>(dataString);
@@ -52,7 +53,7 @@ namespace ydb.Report
                     default:
                         throw new Exception();
                 }
-                sql = $"SELECT  ISNULL(SUM([RouteCount]),0) RouteCount ,ISNULL(SUM([OKRouteCount]),0) OKRouteCount FROM [yaodaibao].[dbo].[RouteView] where '{startTime.ToString("yyyy-MM-dd")}'<= FDate  and  FDate <= '{endTime.ToString("yyyy-MM-dd")}' and FEmployeeID = {routeEntity.EmployeeId}";
+                sql = "SELECT  ISNULL(SUM([RouteCount]),0) RouteCount ,ISNULL(SUM([OKRouteCount]),0) OKRouteCount FROM [yaodaibao].[dbo].[RouteView] where '"+ startTime.ToString("yyyy-MM-dd") + "' <= FDate  and  FDate <= '"+ endTime.ToString("yyyy-MM-dd") + "' and FEmployeeID = "+ routeEntity.EmployeeId + "";
 
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
@@ -68,60 +69,61 @@ namespace ydb.Report
                 {
                     per = okcount * 100 / rcount;
                 }
+                string routeconfig = Common.GetCompassConfigFromXml("Route").Replace("ColorPre", "#");
+ 
+                result = Rowcontent.Replace("R-1", rcount.ToString()).Replace("R-2", okcount.ToString()).Replace("R-3", routeconfig).Replace("R-4", "签到").Replace("R-5", "1").Replace("R-6", per + "%").Replace("R-7", rcount.ToString()).Replace("R-8", startTime.ToString("yyyy-MM-dd")).Replace("R-9", endTime.ToString("yyyy-MM-dd"));
+                //PersonPerResult mainResult = new PersonPerResult() { dataRow = new List<PersonPerResultDataRow>() };
+                ////签到的
+                //PersonPerResultDataRow roteRow = new PersonPerResultDataRow() { dataSets = new List<PersonPerResultDataSet>() };
+                //roteRow.Count = rcount.ToString();
+                //roteRow.Name = "签到";
+                //roteRow.Index = "1";
+                //roteRow.Value = per.ToString() + "%";
+                //roteRow.StartTime = startTime.ToString("yyyy-MM-dd");
+                //roteRow.EndTime = endTime.ToString("yyyy-MM-dd");
 
+                //PersonPerResultDataSet routesets = new PersonPerResultDataSet();
+                //routesets.Values = "[{value: " + rcount + ", label: ''},{value: " + okcount + ", label: ''}]";
+                //routesets.Lable = "";
+                //routesets.Config = Common.GetCompassConfigFromXml("Route").Replace("ColorPre", "#");
+                ////拜访的
+                //PersonPerResultDataRow callRow = new PersonPerResultDataRow() { dataSets = new List<PersonPerResultDataSet>() };
+                //callRow.Count = rcount.ToString();
+                //callRow.Name = "拜访";
+                //callRow.Index = "2";
+                //callRow.Value = per.ToString() + "%";
+                //callRow.StartTime = startTime.ToString("yyyy-MM-dd");
+                //callRow.EndTime = endTime.ToString("yyyy-MM-dd");
 
-                PersonPerResult mainResult = new PersonPerResult() { dataRow = new List<PersonPerResultDataRow>() };
-                //签到的
-                PersonPerResultDataRow roteRow = new PersonPerResultDataRow() { dataSets = new List<PersonPerResultDataSet>() };
-                roteRow.Count = rcount.ToString();
-                roteRow.Name = "签到";
-                roteRow.Index = "1";
-                roteRow.Value = per.ToString() + "%";
-                roteRow.StartTime = startTime.ToString("yyyy-MM-dd");
-                roteRow.EndTime = endTime.ToString("yyyy-MM-dd");
+                //PersonPerResultDataSet callsets = new PersonPerResultDataSet();
+                //callsets.Values = "[{value: " + rcount + ", label: ''},{value: " + okcount + ", label: ''}]";
+                //callsets.Lable = "";
+                //callsets.Config = Common.GetCompassConfigFromXml("Call").Replace("ColorPre", "#");
 
-                PersonPerResultDataSet routesets = new PersonPerResultDataSet();
-                routesets.Values = "[{value: " + rcount + ", label: ''},{value: " + okcount + ", label: ''}]";
-                routesets.Lable = "";
-                routesets.Config = Common.GetCompassConfigFromXml("Route").Replace("ColorPre", "#");
-                //拜访的
-                PersonPerResultDataRow callRow = new PersonPerResultDataRow() { dataSets = new List<PersonPerResultDataSet>() };
-                callRow.Count = rcount.ToString();
-                callRow.Name = "拜访";
-                callRow.Index = "2";
-                callRow.Value = per.ToString() + "%";
-                callRow.StartTime = startTime.ToString("yyyy-MM-dd");
-                callRow.EndTime = endTime.ToString("yyyy-MM-dd");
+                ////进销存的
+                //PersonPerResultDataRow stockRow = new PersonPerResultDataRow() { dataSets = new List<PersonPerResultDataSet>() };
+                //stockRow.Count = rcount.ToString();
+                //stockRow.Name = "进销存";
+                //stockRow.Index = "3";
+                //stockRow.Value = per.ToString() + "%";
+                //stockRow.StartTime = startTime.ToString("yyyy-MM-dd");
+                //stockRow.EndTime = endTime.ToString("yyyy-MM-dd");
 
-                PersonPerResultDataSet callsets = new PersonPerResultDataSet();
-                callsets.Values = "[{value: " + rcount + ", label: ''},{value: " + okcount + ", label: ''}]";
-                callsets.Lable = "";
-                callsets.Config = Common.GetCompassConfigFromXml("Call").Replace("ColorPre", "#");
+                //PersonPerResultDataSet stocksets = new PersonPerResultDataSet();
+                //stocksets.Values = "[{value: " + rcount + ", label: ''},{value: " + okcount + ", label: ''}]";
+                //stocksets.Lable = "";
+                //stocksets.Config = Common.GetCompassConfigFromXml("Call").Replace("ColorPre", "#");
 
-                //进销存的
-                PersonPerResultDataRow stockRow = new PersonPerResultDataRow() { dataSets = new List<PersonPerResultDataSet>() };
-                stockRow.Count = rcount.ToString();
-                stockRow.Name = "进销存";
-                stockRow.Index = "3";
-                stockRow.Value = per.ToString() + "%";
-                stockRow.StartTime = startTime.ToString("yyyy-MM-dd");
-                stockRow.EndTime = endTime.ToString("yyyy-MM-dd");
+                ////datarow添加一个datasets
+                //roteRow.dataSets.Add(routesets);
+                //callRow.dataSets.Add(callsets);
+                //stockRow.dataSets.Add(stocksets);
 
-                PersonPerResultDataSet stocksets = new PersonPerResultDataSet();
-                stocksets.Values = "[{value: " + rcount + ", label: ''},{value: " + okcount + ", label: ''}]";
-                stocksets.Lable = "";
-                stocksets.Config = Common.GetCompassConfigFromXml("Call").Replace("ColorPre", "#");
-
-                //datarow添加一个datasets
-                roteRow.dataSets.Add(routesets);
-                callRow.dataSets.Add(callsets);
-                stockRow.dataSets.Add(stocksets);
-
-                //添加一个datarow
-                mainResult.dataRow.Add(roteRow);
-                mainResult.dataRow.Add(callRow);
-                mainResult.dataRow.Add(stockRow);
-                result = JsonConvert.SerializeObject(mainResult);
+                ////添加一个datarow
+                //mainResult.dataRow.Add(roteRow);
+                //mainResult.dataRow.Add(callRow);
+                //mainResult.dataRow.Add(stockRow);
+                //result = JsonConvert.SerializeObject(mainResult);
                 return result;
             }
             catch (Exception err)
