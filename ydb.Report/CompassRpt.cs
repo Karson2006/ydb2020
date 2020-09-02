@@ -18,7 +18,7 @@ namespace ydb.Report
         }
         public string GetPersonPerReport(string dataString)
         {
-            string Rowcontent = "\"DataRow\": {\"DataSets\":[{\"values\":[{ \"value\": \"R-1\", \"label\": \"\"},{ \"value\": \"R-2\", \"label\":\"\"}],label:\"\",config: \"R-3\"}],\"name\": \"R-4\",Index:\"R-5\",value:\"R-6\",\"Count\":\"R-7\",\"startTime\":\"R-8\",\"endTime\":\"R-9\"}";
+            string Rowcontent = "\"DataRow\": {{\"DataSets\":[{{\"values\":[{{ \"value\": \"{0}\", \"label\": \"\"}},{{ \"value\": \"{1}\", \"label\":\"\"}}],label:\"\",config: \"{2}\"}}],\"name\": \"{3}\",Index:\"{4}\",value:\"{5}\",\"Count\":\"{6}\",\"startTime\":\"{7}\",\"endTime\":\"{8}\"}}";
             //dataString = "{\"FWeekIndex\":\"10\",\"AuthCode\":\"1d340262-52e0-413f-b0e7-fc6efadc2ee5\",\"EmployeeID\":\"4255873149499886263\",\"BeginDate\":\"2020-08-05\",\"EndDate\":\"2020-08-31\"}";
             try
             {
@@ -53,7 +53,7 @@ namespace ydb.Report
                     default:
                         throw new Exception();
                 }
-                sql = "SELECT  ISNULL(SUM([RouteCount]),0) RouteCount ,ISNULL(SUM([OKRouteCount]),0) OKRouteCount FROM [yaodaibao].[dbo].[RouteView] where '"+ startTime.ToString("yyyy-MM-dd") + "' <= FDate  and  FDate <= '"+ endTime.ToString("yyyy-MM-dd") + "' and FEmployeeID = "+ routeEntity.EmployeeId + "";
+                sql = $"SELECT  ISNULL(SUM([RouteCount]),0) RouteCount ,ISNULL(SUM([OKRouteCount]),0) OKRouteCount FROM [yaodaibao].[dbo].[RouteView] where '{startTime.ToString("yyyy-MM-dd")}' <= FDate  and  FDate <= '{ endTime.ToString("yyyy-MM-dd") }' and FEmployeeID = { routeEntity.EmployeeId}";
 
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
@@ -71,7 +71,8 @@ namespace ydb.Report
                 }
                 string routeconfig = Common.GetCompassConfigFromXml("Route").Replace("ColorPre", "#");
  
-                result = Rowcontent.Replace("R-1", rcount.ToString()).Replace("R-2", okcount.ToString()).Replace("R-3", routeconfig).Replace("R-4", "签到").Replace("R-5", "1").Replace("R-6", per + "%").Replace("R-7", rcount.ToString()).Replace("R-8", startTime.ToString("yyyy-MM-dd")).Replace("R-9", endTime.ToString("yyyy-MM-dd"));
+                //result = Rowcontent.Replace("R-1", ).Replace("R-2",).Replace("R-3", ).Replace("R-4",).Replace("R-5", "1").Replace("R-6", ).Replace("R-7", ).Replace("R-8", ).Replace("R-9",);
+                result = string.Format(Rowcontent, rcount.ToString(), okcount.ToString(), routeconfig, "签到", "1", per + "%", rcount.ToString(), startTime.ToString("yyyy-MM-dd"), endTime.ToString("yyyy-MM-dd"));
                 //PersonPerResult mainResult = new PersonPerResult() { dataRow = new List<PersonPerResultDataRow>() };
                 ////签到的
                 //PersonPerResultDataRow roteRow = new PersonPerResultDataRow() { dataSets = new List<PersonPerResultDataSet>() };

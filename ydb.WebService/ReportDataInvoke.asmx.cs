@@ -149,8 +149,8 @@ namespace ydb.WebService
         public string GetCompassReport(string JsonMessage, string callType)
         {
             CompassRpt compass = new CompassRpt();
-            string result = "{\"R-1\":{\"Result\";\"R-Bool\",\"Description\":\"R-2\",\"DataRows\":R-3}}";
-            result = result.Replace("R-1", callType).Replace("R-Bool","False");
+            string result, FormatResult = "{{\"{0}\":{{\"Result\";\"{1}\",\"Description\":\"{2}\",\"DataRows\":{{{3}}} }} }}";
+            result = string.Format(FormatResult, callType, "False", "", "");            
             string logID = Guid.NewGuid().ToString();
             
             try
@@ -163,13 +163,14 @@ namespace ydb.WebService
                     {
                         CompassRpt routeRpt = new CompassRpt();
                         rowresult = routeRpt.GetPersonPerReport(JsonMessage);
-                        result = result.Replace("R-1", callType).Replace("R-Bool","True").Replace("R-2","").Replace("R-3", rowresult);
+                        result = string.Format(FormatResult, callType, "True", "", rowresult);
+                        //result = result.Replace("R-1", callType).Replace("R-Bool","True").Replace("R-2","").Replace("R-3", rowresult);
                     }
                 }
             }
             catch (Exception err)
             {
-                result = result.Replace("R-1", callType).Replace("R-2", err.Message).Replace("R-3","");
+                result = string.Format(FormatResult, callType, "False", err.Message, "");
             }
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
