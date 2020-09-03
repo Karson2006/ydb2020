@@ -149,7 +149,7 @@ namespace ydb.WebService
         public string GetCompassReport(string JsonMessage, string callType)
         {
             CompassRpt compass = new CompassRpt();
-            string result, FormatResult = "{{\"{0}\":{{\"Result\";\"{1}\",\"Description\":\"{2}\",\"DataRows\":{{{3}}} }} }}";
+            string result, FormatResult = "{{\"{0}\":{{\"Result\":\"{1}\",\"Description\":\"{2}\",\"DataRows\":{{ {3} }} }} }}";
             result = string.Format(FormatResult, callType, "False", "", "");            
             string logID = Guid.NewGuid().ToString();
             
@@ -158,13 +158,10 @@ namespace ydb.WebService
                 FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", callType);
                 if (Helper.CheckAuthCode("GetData", JsonMessage, "json"))
                 {
-                    string rowresult = "";
                     if (callType == "GetPersonSummaryReport")
                     {
                         CompassRpt routeRpt = new CompassRpt();
-                        rowresult = routeRpt.GetPersonPerReport(JsonMessage);
-                        result = string.Format(FormatResult, callType, "True", "", rowresult);
-                        //result = result.Replace("R-1", callType).Replace("R-Bool","True").Replace("R-2","").Replace("R-3", rowresult);
+                        result = routeRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);                       
                     }
                 }
             }
