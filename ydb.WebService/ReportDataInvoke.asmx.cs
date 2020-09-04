@@ -148,9 +148,8 @@ namespace ydb.WebService
         //报表统一入口
         public string GetCompassReport(string JsonMessage, string callType)
         {
-            CompassRpt compass = new CompassRpt();
-            string result, FormatResult = "{{\"{0}\":{{\"Result\":\"{1}\",\"Description\":\"{2}\",\"DataRows\":{{ {3} }} }} }}";
-            result = string.Format(FormatResult, callType, "False", "", "");            
+            string result, FormatResult = "{{\"{0}\":{{\"Result\":{1},\"Description\":{2},\"DataRows\":{3} }} }}";
+            result = string.Format(FormatResult, callType, "\"False\"", "", "");            
             string logID = Guid.NewGuid().ToString();
             
             try
@@ -160,14 +159,14 @@ namespace ydb.WebService
                 {
                     if (callType == "GetPersonSummaryReport")
                     {
-                        CompassRpt routeRpt = new CompassRpt();
-                        result = routeRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);                       
+                        PersonalCompass perRpt = new PersonalCompass();
+                        result = perRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);                       
                     }
                 }
             }
             catch (Exception err)
             {
-                result = string.Format(FormatResult, callType, "False", err.Message, "");
+                result = string.Format(FormatResult, callType, "\"False\"", err.Message, "");
             }
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
