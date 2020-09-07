@@ -68,6 +68,8 @@ namespace ydb.Report
         /// <param name="weekIndex"></param>
         /// <returns>返回结果例如 202035|202036|202037 </returns>
         public static string GetYearWithWeeks(string weekIndex) {
+            try
+            {             
             string years, weekOfyears;
             List<string> list = new List<string>();
             Common.GetWeekIndexOfYearEx(weekIndex, out years, out weekOfyears);
@@ -77,6 +79,12 @@ namespace ydb.Report
                 list.Add("'"+years + weeks[i]+"'");
             }
             return string.Join(",",list.ToArray());
+            }
+            catch (Exception err)
+            {
+
+                throw err;
+            }
         }
             
     }
