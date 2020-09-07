@@ -77,8 +77,15 @@ namespace ydb.Report
         /// <returns></returns>
         public string GetDataRow(int viewType, string rowContent, string EmployeeId, string startTime, string endTime, string yearweek)
         {
-            string sql = "", viewName = "", tempresult="", routeconfig;
+            string sql = "", viewName = "", tempresult="", routeconfig,p1,p2;
             int total, okcount, per;
+            //获取前两个产品
+
+            SQLServerHelper runner = new SQLServerHelper();
+            sql = "select top 2 FProductID as  ProductID from [yaodaibao].[dbo].[HospitalStock]";
+            DataTable dtproduct = runner.ExecuteSql(sql);
+            p1 = dtproduct.Rows[0]["ProductID"] ==DBNull.Value? "" :dtproduct.Rows[0]["ProductID"].ToString();
+            p2 = dtproduct.Rows[1]["ProductID"] == DBNull.Value ? "" : dtproduct.Rows[1]["ProductID"].ToString();
             switch (viewType)
             {
                 //1,签到
@@ -104,12 +111,12 @@ namespace ydb.Report
                 //5,艾夫吉夫
                 case 5:
                     viewName = "艾夫吉夫";                  
-                    sql = $"select SUM(FStock_IB) StockIB,SUM(FStock_IN) Total,SUM(FStock_EB) StockEB,SUM(FSaleAmount) OKCount from [yaodaibao].[dbo].[HospitalStock_Detail] where FFormmainID in (SELECT FID FROM[yaodaibao].[dbo].[HospitalStock] where(cast(FYear as nvarchar(4)) + cast(FWeekIndex as nvarchar(2))) in({yearweek}) and FEmployeeID in({EmployeeId}) and FProductID = '69d55ff7-d9d6-4f20-bcbc-b5244894f36e' )";
+                    sql = $"select SUM(FStock_IB) StockIB,SUM(FStock_IN) Total,SUM(FStock_EB) StockEB,SUM(FSaleAmount) OKCount from [yaodaibao].[dbo].[HospitalStock_Detail] where FFormmainID in (SELECT FID FROM [yaodaibao].[dbo].[HospitalStock] where(cast(FYear as nvarchar(4)) + cast(FWeekIndex as nvarchar(2))) in({yearweek}) and FEmployeeID in({EmployeeId}) and FProductID = '{p1}' )";
                     break;
                 // 6,丙戊酸钠
                 case 6:
                     viewName = "丙戊酸钠";
-                    sql = $"select SUM(FStock_IB) StockIB,SUM(FStock_IN) Total,SUM(FStock_EB) StockEB,SUM(FSaleAmount) OKCount from [yaodaibao].[dbo].[HospitalStock_Detail] where FFormmainID in (SELECT FID FROM[yaodaibao].[dbo].[HospitalStock] where(cast(FYear as nvarchar(4)) + cast(FWeekIndex as nvarchar(2))) in({yearweek}) and FEmployeeID in({EmployeeId})  and FProductID = '6e927e6d-b03a-4601-b4dd-2ec583a46768' )";
+                    sql = $"select SUM(FStock_IB) StockIB,SUM(FStock_IN) Total,SUM(FStock_EB) StockEB,SUM(FSaleAmount) OKCount from [yaodaibao].[dbo].[HospitalStock_Detail] where FFormmainID in (SELECT FID FROM [yaodaibao].[dbo].[HospitalStock] where(cast(FYear as nvarchar(4)) + cast(FWeekIndex as nvarchar(2))) in({yearweek}) and FEmployeeID in({EmployeeId})  and FProductID = '{p2}' )";
                     break;
                 // 7,待支付金额
                 case 7:
@@ -123,7 +130,6 @@ namespace ydb.Report
                     break;
             }
 
-            SQLServerHelper runner = new SQLServerHelper();
             DataTable dt = runner.ExecuteSql(sql);
             //百分比
             total = int.Parse((dt.Rows[0]["Total"] ==DBNull.Value ) ? "0" : dt.Rows[0]["Total"].ToString());
