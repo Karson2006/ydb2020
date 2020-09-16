@@ -26,6 +26,12 @@ namespace ydb.Report
 
                 switch (weekIndex)
                 {
+                    //本年
+                    case "-1000":
+                        temptime = Common.GetYearSETime(DateTime.Now);
+                        startTime = DateTime.Parse(temptime.Split('&')[0]);
+                        endTime = DateTime.Parse(temptime.Split('&')[1]);
+                        break;
                     //上月
                     case "-11":
                         temptime = Common.GetMonthTime(DateTime.Now.AddMonths(-1));

@@ -10,6 +10,7 @@ namespace ydb.Report
 {
     public class OASyncHelper
     {
+        //同步流程状态
         public static string SyncFlow(string xmlMessage)
         {
             string result = "<GetData> " +
@@ -27,7 +28,7 @@ namespace ydb.Report
                 //先查ID有没有记录
                 sql = $"select [FID] from  [yaodaibao].[dbo].[OAProcessStatus]  where FID = {mainform["FID"]}";
                 System.Data.DataTable data = runner.ExecuteSql(sql);
-                //没有先插入在更新
+                //没有查到数据，先插入在更新
                 if (data.Rows.Count < 1)
                 {
                     sql = $"Insert Into [yaodaibao].[dbo].[OAProcessStatus](FID) Values({mainform["FID"]})";
@@ -36,8 +37,8 @@ namespace ydb.Report
                 foreach (var item in mainform)
                 {
                     updateValue += (item.Key + "='" + item.Value + "',");
-                }
-                if (updateValue.Trim().Length > 0)
+                }                
+                if (updateValue.Trim().Length > 1)
                 {
                     updateValue = updateValue.Remove(updateValue.Length - 1, 1);
                 }

@@ -144,14 +144,21 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonSummaryReport");
             return result;
         }
+        [WebMethod]
+        public string GetPersonFlowReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonFlowReport");
+            return result;
+        }
 
         //报表统一入口
         public string GetCompassReport(string JsonMessage, string callType)
         {
             string result, FormatResult = "{{\"{0}\":{{\"Result\":{1},\"Description\":{2},\"DataRows\":{3} }} }}";
-            result = string.Format(FormatResult, callType, "\"False\"", "", "");            
+            result = string.Format(FormatResult, callType, "\"False\"", "", "");
             string logID = Guid.NewGuid().ToString();
-            
+
             try
             {
                 FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", callType);
@@ -160,7 +167,13 @@ namespace ydb.WebService
                     if (callType == "GetPersonSummaryReport")
                     {
                         PersonalCompass perRpt = new PersonalCompass();
-                        result = perRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);                       
+                        //没有类型判断，全部获取
+                        result = perRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);
+                    }
+                    if (callType == "GetPersonFlowReport")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType,"3");
                     }
                 }
             }
@@ -171,6 +184,43 @@ namespace ydb.WebService
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
         }
-    }
 
+        [WebMethod]
+        //流程同步
+        public string SyncFlow(string callType, string xmlMessage)
+        {
+            string result = "";
+            result = GetSyncResult(xmlMessage, "SyncFlow");           
+            return result;
+        }
+        //同步统一入口
+        public string GetSyncResult(string xmlMessage, string callType)
+        {
+            string logID = Guid.NewGuid().ToString();
+            string result = "<GetData>" +
+               "<Result>False</Result>" +
+               "<Description></Description><DataRows></DataRows></GetData>";
+            try
+            {
+                FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
+                if (Helper.CheckAuthCode("GetData", xmlMessage))
+                {
+                   if (callType == "SyncFlow")
+                    {
+                        result = OASyncHelper.SyncFlow(xmlMessage);
+                    }
+                }          
+            }
+            catch (Exception err)
+            {
+                result = "" +
+
+                          "<GetData>" +
+                          "<Result>False</Result>" +
+                          "<Description>" + err.Message + "</Description><DataRows></DataRows></GetData>";
+            }
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
+            return result;
+        }       
+    }
 }
