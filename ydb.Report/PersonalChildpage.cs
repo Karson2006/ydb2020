@@ -24,7 +24,6 @@ namespace ydb.Report
                 //查询实体
                 RouteEntity routeEntity = JsonConvert.DeserializeObject<RouteEntity>(dataString);
                 weekindex += routeEntity.FWeekIndex;
-                childType = routeEntity.ChildType;
                 DateTime startTime, endTime;
                 Tuple<DateTime, DateTime> pertime = ReportHelper.GetPerTime(routeEntity.FWeekIndex);
                 //开始时间
@@ -34,6 +33,7 @@ namespace ydb.Report
                 //5-8使用
                 yearweek = ReportHelper.GetYearWithWeeks(routeEntity.FWeekIndex);
                 SQLServerHelper runner = new SQLServerHelper();
+                DataTable dt = new DataTable();
                 switch (childType)
                 {
                     case 1: break;
@@ -41,16 +41,36 @@ namespace ydb.Report
                     //流程
                     case 3:
                         sql = $"SELECT [FSubject] as FSubject ,[FStart_Date] as StartDate,[FCurrent_Member_Name] as CurrentMemberName FROM [yaodaibao].[dbo].[OAProcessStatus]  where   '{startTime}' <= [FStart_Date]  and [FStart_Date] <= '{endTime}' and FState in ('流转中') and FStart_Member_ID in ({routeEntity.EmployeeIds})";
-                        DataTable dt = runner.ExecuteSql(sql);
+                         dt = runner.ExecuteSql(sql);
                         foreach (DataRow item in dt.Rows)
                         {
                             rowcontent = "{\"Time\":\"" + DateTime.Parse(item["StartDate"].ToString()).ToString("yyyyMMyy") + "\",\"Subject\":\"" + item["FSubject"] + "\",\"Name\":\"" + item["CurrentMemberName"] + "\",\"startTime\":\"" + startTime.ToString("yyyyMMdd") + "\",\"endTime\":\"" + endTime.ToString("yyyyMMdd") + "\",\"FWeekIndex\":\"" + routeEntity.FWeekIndex + "\"}";
                             rowList.Add(rowcontent);
                         }        
                         break;
-                    case 4: break;
+                    //支付
+                    case 4:
+                        //Ffield0006 可为空
+                        sql = $"select Ffield0005 as PayType,Ffield0007 as PayCode ,FApplyName as ApplyName,Ffield0009 as  Paid,Ffield0034 as Balance from [yaodaibao].[dbo].[formmain_3460]  where   '{startTime}' <= [FStart_Date]  and [FStart_Date] <= '{endTime}' and Ffield0006 in ('{routeEntity.EmployeeIds}')";
+                        dt = runner.ExecuteSql(sql);
+                        foreach (DataRow item in dt.Rows)
+                        {
+                            rowcontent = "{\"Year\":\"" + DateTime.Now.ToString("yyyy") + "\",\"PayType\":\"" + item["PayType"] + "\",\"PayCode\":\"" + item["PayCode"] + "\",\"ApplyName\":\"" + item["ApplyName"] + "\",\"Paid\":\"" + item["Paid"] + "\",\"Balance\":\"" + item["Balance"] + "\",\"startTime\":\"" + startTime.ToString("yyyyMMdd") + "\",\"endTime\":\"" + endTime.ToString("yyyyMMdd") + "\",\"FWeekIndex\":\"" + routeEntity.FWeekIndex + "\"}";
+                            rowList.Add(rowcontent);
+                        }
+                        break;                    
                     case 5: break;
-                    case 6: break;
+                    //销量
+                    case 6:
+                        //Ffield0014 可为空
+                        sql = $"select   [Ffield0002] as Hospital,[Ffield0008] as  Total FROM [yaodaibao].[dbo].[formmain_6786]  where   '{startTime}' <= [FStart_Date]  and [FStart_Date] <= '{endTime}' and Ffield0014 in ('{routeEntity.EmployeeIds}')";
+                        dt = runner.ExecuteSql(sql);
+                        foreach (DataRow item in dt.Rows)
+                        {
+                            rowcontent = "{\"Year\":\"" + DateTime.Now.ToString("yyyy") + "\",\"Hospital\":\"" + item["Hospital"] + "\",\"Total\":\"" + item["Total"]  + "\",\"startTime\":\"" + startTime.ToString("yyyyMMdd") + "\",\"endTime\":\"" + endTime.ToString("yyyyMMdd") + "\",\"FWeekIndex\":\"" + routeEntity.FWeekIndex + "\"}";
+                            rowList.Add(rowcontent);
+                        }
+                        break;
                     case 7: break;
                     case 8: break;
                     default:

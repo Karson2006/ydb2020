@@ -137,6 +137,7 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetData");
             return result;
         }
+        //一级页面
         [WebMethod]
         public string GetPersonSummaryReport(string JsonMessage)
         {
@@ -144,6 +145,7 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonSummaryReport");
             return result;
         }
+        //流程子页面
         [WebMethod]
         public string GetPersonFlowReport(string JsonMessage)
         {
@@ -151,7 +153,22 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonFlowReport");
             return result;
         }
-
+        //支付子页面
+        [WebMethod]
+        public string GetPersonPayReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonPayReport");
+            return result;
+        }
+        //销量子页面
+        [WebMethod]
+        public string GetPersonSalesReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonSalesReport");
+            return result;
+        }
         //报表统一入口
         public string GetCompassReport(string JsonMessage, string callType)
         {
@@ -170,10 +187,20 @@ namespace ydb.WebService
                         //没有类型判断，全部获取
                         result = perRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);
                     }
-                    if (callType == "GetPersonFlowReport")
+                    else if (callType == "GetPersonFlowReport")
                     {
                         PersonalChildpage perChildRpt = new PersonalChildpage();
-                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType,"3");
+                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "3");
+                    }
+                    else if (callType == "GetPersonPayReport")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "4");
+                    }
+                    else if (callType == "GetPersonSalesReport")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "6");
                     }
                 }
             }
@@ -185,12 +212,30 @@ namespace ydb.WebService
             return result;
         }
 
+
+
         [WebMethod]
         //流程同步
         public string SyncFlow(string callType, string xmlMessage)
         {
             string result = "";
-            result = GetSyncResult(xmlMessage, "SyncFlow");           
+            result = GetSyncResult(xmlMessage, "SyncFlow");
+            return result;
+        }
+        [WebMethod]
+        //销量同步
+        public string SyncSales(string callType, string xmlMessage)
+        {
+            string result = "";
+            result = GetSyncResult(xmlMessage, "SyncSales");
+            return result;
+        }
+        [WebMethod]
+        //支付同步
+        public string SyncPay(string callType, string xmlMessage)
+        {
+            string result = "";
+            result = GetSyncResult(xmlMessage, "SyncPay");
             return result;
         }
         //同步统一入口
@@ -205,11 +250,8 @@ namespace ydb.WebService
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
                 if (Helper.CheckAuthCode("GetData", xmlMessage))
                 {
-                   if (callType == "SyncFlow")
-                    {
-                        result = OASyncHelper.SyncFlow(xmlMessage);
-                    }
-                }          
+                    result = OASyncHelper.SyncHelper(xmlMessage, callType);
+                }
             }
             catch (Exception err)
             {
@@ -221,6 +263,6 @@ namespace ydb.WebService
             }
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
-        }       
+        }
     }
 }
