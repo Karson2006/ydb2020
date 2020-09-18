@@ -137,7 +137,7 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetData");
             return result;
         }
-        //一级页面
+        //一级个人页面
         [WebMethod]
         public string GetPersonSummaryReport(string JsonMessage)
         {
@@ -169,6 +169,14 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonSalesReport");
             return result;
         }
+        //支付查询
+        [WebMethod]
+        public string PayQuery(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "PayQuery");
+            return result;
+        }
         //报表统一入口
         public string GetCompassReport(string JsonMessage, string callType)
         {
@@ -181,26 +189,36 @@ namespace ydb.WebService
                 FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", callType);
                 if (Helper.CheckAuthCode("GetData", JsonMessage, "json"))
                 {
+                    //罗盘主页
                     if (callType == "GetPersonSummaryReport")
                     {
                         PersonalCompass perRpt = new PersonalCompass();
                         //没有类型判断，全部获取
                         result = perRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);
                     }
+                    //流程子页面
                     else if (callType == "GetPersonFlowReport")
                     {
                         PersonalChildpage perChildRpt = new PersonalChildpage();
                         result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "3");
                     }
+                    //支付子页面
                     else if (callType == "GetPersonPayReport")
                     {
                         PersonalChildpage perChildRpt = new PersonalChildpage();
                         result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "4");
                     }
+                    //销量子页面
                     else if (callType == "GetPersonSalesReport")
                     {
                         PersonalChildpage perChildRpt = new PersonalChildpage();
                         result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "6");
+                    }
+                    //支付查询
+                    else if (callType == "PayQuery")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.PayQuery(JsonMessage, FormatResult, callType);
                     }
                 }
             }

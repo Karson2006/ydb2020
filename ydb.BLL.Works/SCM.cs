@@ -348,8 +348,17 @@ namespace ydb.BLL.Works
                 if (param.ContainsKey("FWeekIndex") && param["FWeekIndex"].Trim().Length > 0)
                 {
                     weekIndex = param["FWeekIndex"];
-                    Common.GetWeekIndexOfYearEx(weekIndex, out years, out weekofYears);
-                    where = where.Trim().Length == 0 ? " t2.FWeekIndex In(" + weekofYears.Replace('|', ',') + ")" : where + "  and  t2.FWeekIndex In(" + weekofYears.Replace('|', ',') + ")";
+                    //全年比较特殊
+                    if (weekIndex=="-1000")
+                    {
+
+                        where = where.Trim().Length == 0 ? " t2.FYear In(" +DateTime.Now.Year + ")" : where + "  and  t2.FYear In(" + DateTime.Now.Year + ")";
+                    }
+                    else
+                    {
+                        Common.GetWeekIndexOfYearEx(weekIndex, out years, out weekofYears);
+                        where = where.Trim().Length == 0 ? " t2.FWeekIndex In(" + weekofYears.Replace('|', ',') + ")" : where + "  and  t2.FWeekIndex In(" + weekofYears.Replace('|', ',') + ")";
+                    }
                 }
                 else
                     throw new Exception("请选择查询时间");

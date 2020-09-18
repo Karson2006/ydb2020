@@ -13,8 +13,8 @@ namespace ydb.Report
 
         public string GetPersonPerReport(string dataString, string FormatResult, string callType)
         {
-            //加,连接起前面的json字符串
-            string result = "", rdataRow, datarows, yearweek, panelRow = "", weekindex = ",\"FWeekIndex\":", YearOrWeek = "Week";
+            //加,连接起前面的json字符串                                                                      
+            string result = "", rdataRow, datarows, yearweek="", panelRow = "", weekindex = ",\"FWeekIndex\":";
             List<string> dataRowList = new List<string>();
             //初始化状态
             //   result = string.Format(FormatResult, callType, "\"False\"", "", "");
@@ -28,36 +28,41 @@ namespace ydb.Report
                 weekindex += routeEntity.FWeekIndex;
                 weekindex += (",\"Year\":" + DateTime.Now.Year + "");
                 DateTime startTime, endTime;
+                //获取第一天和最后一天
                 Tuple<DateTime, DateTime> pertime = ReportHelper.GetPerTime(routeEntity.FWeekIndex);
                 //开始时间
                 startTime = pertime.Item1;
                 //结束时间
                 endTime = pertime.Item2;
                 //5-8使用
-                if (routeEntity.FWeekIndex == "1000")
-                {
-                    yearweek = DateTime.Now.Year.ToString();
-                    YearOrWeek = "Year";
-                }
-                else
+                if (routeEntity.FWeekIndex != "-1000")
                 {
                     yearweek = ReportHelper.GetYearWithWeeks(routeEntity.FWeekIndex);
                 }
-
+                else
+                {
+                    yearweek = routeEntity.FWeekIndex;
+                }
                 //自定义》1,签到，2,拜访，3,流程，4,支付,5,艾夫吉夫 6,销量 7,****，8，奖金
                 //目前有些数据没有，暂时跳过
                 for (int i = 1; i < 9; i++)
                 {
-                    //还没有销售数据跳过不处理
+  
+                    //主要区分返回格式 和时间查询问题
                     if (i == 1 || i == 2 || i == 3 || i == 4)
                     {
-                        rdataRow = GetDataRow(i, rowcontent, routeEntity.EmployeeId, startTime.ToString("yyyy-MM-dd"), endTime.ToString("yyyy-MM-dd"), "", YearOrWeek);
+                        rdataRow = GetDataRow(i, rowcontent, routeEntity.EmployeeId, startTime.ToString("yyyy-MM-dd"), endTime.ToString("yyyy-MM-dd"), "");
                         dataRowList.Add(rdataRow);
                     }
                     //罗盘下面四大类
-                    else if (i == 5 || i == 6)
+                    else if (i == 5)
                     {
-                        panelRow += GetDataRow(i, rowcontent, routeEntity.EmployeeId, "", "", yearweek, YearOrWeek);
+                        //进销存
+                        panelRow += GetDataRow(i, rowcontent, routeEntity.EmployeeId, "", "", yearweek);
+                    }
+                    else if(i == 6)
+                    {
+                        panelRow += GetDataRow(i, rowcontent, routeEntity.EmployeeId, startTime.ToString("yyyy-MM-dd"), endTime.ToString("yyyy-MM-dd"), "");
                     }
                     else
                     {
@@ -88,7 +93,7 @@ namespace ydb.Report
         /// <param name="type">1,签到，2,拜访，3,流程，4,待定,5,艾夫吉夫 6,丙戊酸钠 7,待支付金额，8，奖金</param>
         /// <param name="YearOrWeek">按年查或者按周查，按年查比较特殊，sql语句会有变化</param>
         /// <returns></returns>
-        public string GetDataRow(int viewType, string rowContent, string EmployeeId, string startTime, string endTime, string yearweek, string YearOrWeek)
+        public string GetDataRow(int viewType, string rowContent, string EmployeeId, string startTime, string endTime, string yearweek)
         {
             string sql = "", viewName = "", tempresult = "", routeconfig, p1, p2, partsql;
             int total, okcount, per;
@@ -125,27 +130,26 @@ namespace ydb.Report
                     //4,支付
                     case 4:
                         viewName = "支付";
-                        sql = $"select sum(Ffield0008) Total,sum(Ffield0009) OKCount   FROM [yaodaibao].[dbo].[formmain_3460]    where '{startTime}' <= [FStart_Date]  and  [FStart_Date] <= '{ endTime }' and Ffield0006 in ('{EmployeeId}')";
+                        sql = $"select  sum(Ffield0008) Total,sum(Ffield0008-Ffield0034) OKCount   FROM [yaodaibao].[dbo].[formmain_3460]  where '{startTime}' <= [FStart_Date]  and  [FStart_Date] <= '{ endTime }' and Ffield0006 in ('{EmployeeId}')";
                         break;
                     //5,艾夫吉夫
                     case 5:
                         viewName = "艾夫吉夫";
 
-                        if (YearOrWeek == "Year")
+                        if (yearweek == "-1000")
                         {
-                            partsql = $" cast(FYear as nvarchar(4)) in({yearweek}) ";
+                            partsql = $" cast(FYear as nvarchar(4)) in({DateTime.Now.Year.ToString()}) ";
                         }
                         else
                         {
                             partsql = $" (cast(FYear as nvarchar(4)) + cast(FWeekIndex as nvarchar(2))) in({yearweek})  ";
                         }
-
                         sql = $"select SUM(FStock_IB) StockIB,SUM(FStock_IN) Total,SUM(FStock_EB) StockEB,SUM(FSaleAmount) OKCount from [yaodaibao].[dbo].[HospitalStock_Detail] where FFormmainID in (SELECT FID FROM [yaodaibao].[dbo].[HospitalStock] where {partsql} and FEmployeeID in({EmployeeId}) and FProductID = '69d55ff7-d9d6-4f20-bcbc-b5244894f36e' )";
                         break;
                     // 6,销量
                     case 6:
-                        viewName = "销量";
-                        sql = $"select SUM(Ffield0008) Total,SUM(Ffield0008) OKCount  from [yaodaibao].[dbo].[formmain_6786]  where  '{startTime}' <= [FStart_Date]  and  [FStart_Date] <= '{ endTime }' and Ffield0014 in ('{EmployeeId})')";
+                        viewName = "数量";
+                        sql = $"select SUM(Ffield0008) Total,SUM(Ffield0008) OKCount  from [yaodaibao].[dbo].[formmain_6786]  where Ffield0011 in ('人员') and  '{startTime}' <= [FStart_Date]  and  [FStart_Date] <= '{ endTime }' and Ffield0014 in ('{EmployeeId}')";
                         break;
                     // 7,待支付金额
                     case 7:
@@ -162,10 +166,10 @@ namespace ydb.Report
                 DataTable dt = runner.ExecuteSql(sql);
                 //百分比
                 total = int.Parse((dt.Rows[0]["Total"] == DBNull.Value) ? "0" : dt.Rows[0]["Total"].ToString());
- 
+                okcount = int.Parse(dt.Rows[0]["OKCount"] == DBNull.Value ? "0" : dt.Rows[0]["OKCount"].ToString());
                 if (viewType < 5)
                 {
-                    okcount = int.Parse(dt.Rows[0]["OKCount"] == DBNull.Value ? "0" : dt.Rows[0]["OKCount"].ToString());
+ 
                     if (total == 0)
                     {
                         per = 0;
@@ -184,14 +188,14 @@ namespace ydb.Report
                     //艾夫吉夫
                     if (viewType == 5)
                     {
-                        okcount = int.Parse(dt.Rows[0]["OKCount"] == DBNull.Value ? "0" : dt.Rows[0]["OKCount"].ToString());
+
                         //加,拼后面的json
                         tempresult = $"\"AFJFName\":\"艾夫吉夫\",\"AFJFCount\":{okcount},\"AFJFProductID\":\"69d55ff7-d9d6-4f20-bcbc-b5244894f36e\"" + ",";
                     }
                     //销量
                     else if (viewType == 6)
                     {                       
-                        tempresult = $"\"SalesName\":\"销量\",\"SalesCount\":{total}";
+                        tempresult = $"\"SalesName\":\"数量\",\"SalesCount\":{okcount}";
                     }
                 }
             }
