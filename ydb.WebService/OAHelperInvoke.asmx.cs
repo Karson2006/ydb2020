@@ -16,13 +16,12 @@ namespace ydb.WebService
     // [System.Web.Script.Services.ScriptService]
     public class OAHelperInvoke : System.Web.Services.WebService
     {
-
         [WebMethod]
-        public string AutoCheck()
+        public string AutoCheck(string JsonMassage)
         {
             return "Hello World";
         }
-        public string Manual()
+        public string Manual(string JsonMessage)
         {
             return "Hello World";
         }
