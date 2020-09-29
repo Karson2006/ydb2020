@@ -338,18 +338,19 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FTitleID ='" + val + "',";
                 }
-                //vNode = doc.SelectSingleNode("UpdateItem/FIDNumber");
-                //if (vNode == null || vNode.InnerXml.Trim().Length == 0)
-                //{
-                //    datachecked = false;
-                //    throw new Exception("身份证号码不能为空");
-                //}
-                //else
-                //{
-                //    val = vNode.InnerText;
-                //    if (val.Trim().Length > 0)
-                //        valueString = valueString + "FIDNumber ='" + val + "',";
-                //}
+                vNode = doc.SelectSingleNode("UpdateItem/FIDNumber");
+                if (vNode == null || vNode.InnerXml.Trim().Length == 0)
+                {
+                    //datachecked = false;
+                    //throw new Exception("身份证号码不能为空");
+                }
+                else
+                {
+                    val = vNode.InnerText;
+                    if (val.Trim().Length > 0)
+                        valueString = valueString + "FIDNumber ='" + val + "',";
+                }
+
                 vNode = doc.SelectSingleNode("UpdateItem/FMobile");
                 if (vNode == null || vNode.InnerXml.Trim().Length == 0)
                 {
@@ -364,6 +365,15 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FMobile ='" + val + "',";
                 }
+
+                
+                if (action=="1")
+                {
+                    vNode = doc.SelectSingleNode("UpdateItem/FNumber");
+                    val = Common.GetNumber("Doctor","FNumber");
+                    vNode.InnerText = val;
+                }
+
 
                 vNode = doc.SelectSingleNode("UpdateItem/FCompanyID");
                 if (vNode != null)
@@ -448,6 +458,8 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FApproved='" + val + "',";
                 }
+
+
 
 
                 if (valueString.Trim().Length > 0)

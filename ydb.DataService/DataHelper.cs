@@ -21,7 +21,15 @@ namespace ydb.DataService
             result = invoke.Invoke(WSURL +"OrganizationInvoke.asmx","OrganizationInvoke",mothed,parm).ToString();
             return result;
         }
+        public static string OASyncInvoke(string mothed, string xmlString)
+        {
+            string result = "";
+            string[] parm = new string[] { mothed, xmlString };
 
+            WebInvoke invoke = new WebInvoke();
+            result = invoke.Invoke(WSURL + "ReportDataInvoke.asmx", "ReportDataInvoke", mothed, parm).ToString();
+            return result;
+        }
         public static string AuthDatanvoke(string mothed, string xmlString)
         {
             string result = "";

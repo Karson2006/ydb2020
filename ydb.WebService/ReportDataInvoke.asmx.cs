@@ -4,6 +4,8 @@ using System.Linq;
 using System.Web;
 using System.Web.Services;
 using iTR.Lib;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using ydb.Report;
 
 namespace ydb.WebService
@@ -22,9 +24,9 @@ namespace ydb.WebService
         [WebMethod]
         public string GetCallReport1(string xmlMessage)
         {
-           string result ="<GetData>" +
-                          "<Result>False</Result>" +
-                          "<Description></Description></GetData>";
+            string result = "<GetData>" +
+                           "<Result>False</Result>" +
+                           "<Description></Description></GetData>";
             string logID = Guid.NewGuid().ToString();
             try
             {
@@ -50,10 +52,10 @@ namespace ydb.WebService
 
 
         [WebMethod]
-        public string GetCallReport1Json( string JsonMessage)
+        public string GetCallReport1Json(string JsonMessage)
         {
             string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetData");
-            string result = GetCallReport1( xmlString);
+            string result = GetCallReport1(xmlString);
             result = iTR.Lib.Common.XML2Json(result, "GetData");
             return result;
         }
@@ -113,7 +115,7 @@ namespace ydb.WebService
                     CallRpt rpt = new CallRpt();
                     result = rpt.ExportCallReport(xmlMessage);
                 }
- 
+
             }
             catch (Exception err)
             {
@@ -133,6 +135,151 @@ namespace ydb.WebService
             string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetData");
             string result = ExportCallReport(xmlString);
             result = iTR.Lib.Common.XML2Json(result, "GetData");
+            return result;
+        }
+        //一级个人页面
+        [WebMethod]
+        public string GetPersonSummaryReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonSummaryReport");
+            return result;
+        }
+        //流程子页面
+        [WebMethod]
+        public string GetPersonFlowReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonFlowReport");
+            return result;
+        }
+        //支付子页面
+        [WebMethod]
+        public string GetPersonPayReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonPayReport");
+            return result;
+        }
+        //销量子页面
+        [WebMethod]
+        public string GetPersonSalesReport(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "GetPersonSalesReport");
+            return result;
+        }
+        //支付查询
+        [WebMethod]
+        public string PayQuery(string JsonMessage)
+        {
+            string result = "";
+            result = GetCompassReport(JsonMessage, "PayQuery");
+            return result;
+        }
+        //报表统一入口
+        public string GetCompassReport(string JsonMessage, string callType)
+        {
+            string result, FormatResult = "{{\"{0}\":{{\"Result\":{1},\"Description\":{2},\"DataRows\":{3} }} }}";
+            result = string.Format(FormatResult, callType, "\"False\"", "", "");
+            string logID = Guid.NewGuid().ToString();
+
+            try
+            {
+                FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", callType);
+                if (Helper.CheckAuthCode("GetData", JsonMessage, "json"))
+                {
+                    //罗盘主页
+                    if (callType == "GetPersonSummaryReport")
+                    {
+                        PersonalCompass perRpt = new PersonalCompass();
+                        //没有类型判断，全部获取
+                        result = perRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);
+                    }
+                    //流程子页面
+                    else if (callType == "GetPersonFlowReport")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "3");
+                    }
+                    //支付子页面
+                    else if (callType == "GetPersonPayReport")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "4");
+                    }
+                    //销量子页面
+                    else if (callType == "GetPersonSalesReport")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "6");
+                    }
+                    //支付查询
+                    else if (callType == "PayQuery")
+                    {
+                        PersonalChildpage perChildRpt = new PersonalChildpage();
+                        result = perChildRpt.PayQuery(JsonMessage, FormatResult, callType);
+                    }
+                }
+            }
+            catch (Exception err)
+            {
+                result = string.Format(FormatResult, callType, "\"False\"", err.Message, "");
+            }
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
+            return result;
+        }
+
+
+
+        [WebMethod]
+        //流程同步
+        public string SyncFlow(string callType, string xmlMessage)
+        {
+            string result = "";
+            result = GetSyncResult(xmlMessage, "SyncFlow");
+            return result;
+        }
+        [WebMethod]
+        //销量同步
+        public string SyncSales(string callType, string xmlMessage)
+        {
+            string result = "";
+            result = GetSyncResult(xmlMessage, "SyncSales");
+            return result;
+        }
+        [WebMethod]
+        //支付同步
+        public string SyncPay(string callType, string xmlMessage)
+        {
+            string result = "";
+            result = GetSyncResult(xmlMessage, "SyncPay");
+            return result;
+        }
+        //同步统一入口
+        public string GetSyncResult(string xmlMessage, string callType)
+        {
+            string logID = Guid.NewGuid().ToString();
+            string result = "<GetData>" +
+               "<Result>False</Result>" +
+               "<Description></Description><DataRows></DataRows></GetData>";
+            try
+            {
+                FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
+                if (Helper.CheckAuthCode("GetData", xmlMessage))
+                {
+                    result = OASyncHelper.SyncHelper(xmlMessage, callType);
+                }
+            }
+            catch (Exception err)
+            {
+                result = "" +
+
+                          "<GetData>" +
+                          "<Result>False</Result>" +
+                          "<Description>" + err.Message + "</Description><DataRows></DataRows></GetData>";
+            }
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
         }
     }
