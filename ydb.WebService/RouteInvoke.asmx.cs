@@ -7,7 +7,6 @@ using iTR.Lib;
 using ydb.BLL;
 using System.Xml;
 
-
 namespace ydb.WebService
 {
     /// <summary>
@@ -191,8 +190,6 @@ namespace ydb.WebService
         }
         #endregion
 
-        
-
         #region DeleteRoute
         [WebMethod]
         public string DeleteRoute(string callType, string xmlMessage)
@@ -247,6 +244,53 @@ namespace ydb.WebService
             string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "DeleteRoute");
             string result = DeleteRoute(callType, xmlString);
             result = iTR.Lib.Common.XML2Json(result, "DeleteRoute");
+            return result;
+        }
+        #endregion
+
+        /// <summary>
+        /// 自动签到和签退
+        /// </summary>
+        /// <param name="callType"></param>
+        /// <param name="xmlMessage"></param>
+        /// <returns></returns>
+        #region AutoRoute    
+        [WebMethod]
+        public string AutoRoute(string callType, string xmlMessage)
+        {
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                          "<" + callType + ">" +
+                          "<Result>False</Result>" +
+                          "<Description></Description></" + callType + ">";
+            string logID = Guid.NewGuid().ToString();
+            try
+            {
+
+                FileLogger.WriteLog("自动定位Start:|" + logID  + xmlMessage, 1, "", callType);
+
+                if (Helper.CheckAuthCode(callType, xmlMessage))
+                {
+                    RouteData rData = new RouteData();
+                    result = rData.AutoRoute(xmlMessage);
+                }
+            }
+            catch (Exception err)
+            {
+                result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                          "<" + callType + ">" +
+                          "<Result>False</Result>" +
+                          "<Description>" + err.Message + "</Description></" + callType + ">";
+            }
+            FileLogger.WriteLog("自动定位End:|" + logID + "" + result, 1, "", callType);
+            return result;
+        }
+
+        [WebMethod]
+        public string AutoRouteJson(string callType, string JsonMessage)
+        {
+            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "AutoRoute");
+            string result = AutoRoute(callType, xmlString);
+             result = iTR.Lib.Common.XML2Json(result, "AutoRoute");
             return result;
         }
         #endregion
