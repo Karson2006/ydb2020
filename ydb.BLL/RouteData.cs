@@ -11,6 +11,7 @@ namespace ydb.BLL
 {
     public class RouteData
     {
+        private const double EARTH_RADIUS = 6378137;
         public RouteData()
         {
 
@@ -580,10 +581,7 @@ namespace ydb.BLL
                 else
                 {
                     vNode.InnerText = DateTime.Now.ToString("yyyy-MM-dd");
-                }
-
-                
-
+                }              
                 vNode = doc.SelectSingleNode("SignOut/SignOutTime");
                 if (vNode == null)
                 {
@@ -619,5 +617,131 @@ namespace ydb.BLL
             return result;
         }
         #endregion
+
+       public string AutoRoute(string xmlString)
+        {
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AutoRoute>" +
+                                 "<Result>False</Result>" +
+                                 "<Description/><RoutID></RoutID>" +
+                                 "</AutoRoute>",employeeId,lat,lng,fDate,signTime;
+            try
+            {
+                XmlDocument doc = new XmlDocument();
+                XmlNode pNode = null, cNode = null;
+
+                doc.LoadXml(xmlString);
+                XmlNode vNode = doc.SelectSingleNode("AutoRoute/EmployeeID");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("签到者ID不能为空");
+
+                else
+                {
+                    employeeId = doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText.Trim().ToString();
+                }
+                vNode = doc.SelectSingleNode("AutoRoute/Date");
+                if (vNode == null)
+                {
+                    pNode = doc.SelectSingleNode("AutoRoute");
+                    cNode = doc.CreateElement("Date");
+                    cNode.InnerText = DateTime.Now.ToString("yyyy-MM-dd");
+                    pNode.AppendChild(cNode);
+                }
+                else
+                {
+                    vNode.InnerText = DateTime.Now.ToString("yyyy-MM-dd");
+                }
+                fDate = DateTime.Now.ToString("yyyy-MM-dd");
+                vNode = doc.SelectSingleNode("AutoRoute/SignInTime");
+                if (vNode == null)
+                {
+                    pNode = doc.SelectSingleNode("AutoRoute");
+                    cNode = doc.CreateElement("SignInTime");
+                    cNode.InnerText = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    pNode.AppendChild(cNode);
+                }
+                else
+                {
+                    vNode.InnerText = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                }
+                signTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                xmlString = doc.OuterXml;
+                vNode = doc.SelectSingleNode("AutoRoute/SignInLat");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("签入经度不能为空");
+                lat = doc.SelectSingleNode("AutoRoute/SignInLat").InnerText.ToString();
+                vNode = doc.SelectSingleNode("AutoRoute/SignInLng");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("签入纬度不能为空");
+                lng = doc.SelectSingleNode("AutoRoute/SignInLng").InnerText.ToString();
+                result ="ID:"+ doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText.ToString()+ "SignInLat:" + lat + "SignInLng:" +lng +"";
+                SQLServerHelper runner = new SQLServerHelper();
+                string  sql =  "";
+ 
+                result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AutoRoute>" +
+                "<Result>True</Result>" +
+                "<Description>" + result + "<Description/>"+
+                "</AutoRoute>";
+                double meter = GetDistance(121.421861, 31.186788, double.Parse(doc.SelectSingleNode("AutoRoute/SignInLng").InnerText), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLat").InnerText));
+                //自动签退
+                sql = "Select FID from RouteData Where FEmployeeID='" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText + "'";
+                sql = sql + " And FDate between '" + DateTime.Now.ToString("yyyy-MM-dd") + " 0:0:0.000' And '" + DateTime.Now.ToString("yyyy-MM-dd") + " 23:59:59.999'";
+                sql = sql + " And FSignOutAddress=''";
+                //<SignInLat>31.186815</SignInLat><SignInLng>121.42179</SignInLng>
+                DataTable tb = runner.ExecuteSql(sql);
+                //大于300
+                if (meter>200)
+                {
+                    if (tb.Rows.Count > 0)//存在未签退的签到记录,自动签退
+                    {
+                        sql = $"Update RouteData Set FSignOutAddress ='签退地址',FSignOutDate='{fDate}',FSignOutTime='{signTime}',FSignOutLat={lat},FSignOutLng={lng},[FDistance] = {(int)meter} where FID ='{tb.Rows[0]["FID"]}'";
+                        runner.ExecuteSqlNone(sql);
+                    }
+                }
+                //小于300判断是签到
+                else
+                {
+                    if (tb.Rows.Count == 0)//没有要签退的记录，自动签到
+                    {
+                        var nullvalue = DBNull.Value;
+                        //sql = "insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('"+Guid.NewGuid()+"','"+employeeId+"','宏汇国际广场','"+fDate+"','"+signTime+"',NULL,'"+lat+"','"+lng+"',"+(int)meter+")";
+                       sql = $"insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('{Guid.NewGuid()}','{employeeId}','宏汇国际广场','{fDate}','{signTime}',NULL,'{lat}','{lng}',{(int)meter})";
+                        runner.ExecuteSqlNone(sql);
+                    }
+                }
+
+                //方法是状态
+                FileLogger.WriteLog("自动定位End:|" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText.ToString()+"|" + result, 1,"", "AutoRoute");
+
+                    result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AutoRoute>" +
+                                "<Result>True</Result>" +
+                                "</AutoRoute>";
+            }
+            catch (Exception err)
+            {
+                throw err;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 经纬度转化成弧度
+        /// </summary>
+        /// <param name="d"></param>
+        /// <returns></returns>
+        private static double Rad(double d)
+        {
+            return (double)d * Math.PI / 180d;
+        }
+        private static double GetDistance(double lat1, double lng1, double lat2, double lng2)
+        {
+            double radLat1 = Rad(lat1);
+            double radLng1 = Rad(lng1);
+            double radLat2 = Rad(lat2);
+            double radLng2 = Rad(lng2);
+            double a = radLat1 - radLat2;
+            double b = radLng1 - radLng2;
+            double result = 2 * Math.Asin(Math.Sqrt(Math.Pow(Math.Sin(a / 2), 2) + Math.Cos(radLat1) * Math.Cos(radLat2) * Math.Pow(Math.Sin(b / 2), 2))) * EARTH_RADIUS;
+            return result;
+        }
     }
 }
