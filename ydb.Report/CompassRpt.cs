@@ -13,9 +13,6 @@ namespace ydb.Report
 {
     public class CompassRpt
     {
-        public void test()
-        {
-        }
 
         public string GetPersonPerReport(string dataString,string FormatResult,string callType)
         {
@@ -90,15 +87,7 @@ namespace ydb.Report
             return result;
         }
     }
-    public class RouteEntity
-    {
-        public string AuthCode { get; set; }
-        public string EndTime { get; set; }
-        public string StartTime { get; set; }
-        public string EmployeeId { get; set; }
-        public string FWeekIndex { get; set; }
 
-    }
     public class PersonPerResult
     {
         public List<PersonPerResultDataRow> dataRow { get; set; }

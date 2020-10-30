@@ -13,7 +13,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ydb.WebService</RootNamespace>
     <AssemblyName>ydb.WebService</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
@@ -43,6 +43,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="iTR.OP.Invoice">
+      <HintPath>..\..\InvoiceApp\Release\iTR.OP.Invoice.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -67,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ReportDataInvoke.asmx" />
+    <Content Include="InvoiceService.asmx" />
     <Content Include="SCMInvoke.asmx" />
     <Content Include="WorkReportInvoke.asmx" />
     <Content Include="AuthInvoke.asmx" />
@@ -88,6 +92,10 @@
     </Compile>
     <Compile Include="ReportDataInvoke.asmx.cs">
       <DependentUpon>ReportDataInvoke.asmx</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="InvoiceService.asmx.cs">
+      <DependentUpon>InvoiceService.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="SCMInvoke.asmx.cs">

@@ -546,7 +546,7 @@ namespace ydb.BLL
                                 DataTable dt2 = runner.ExecuteSql(sql);
                                 if(dt2.Rows.Count==0)//同部门，Leader变化
                                 {
-                                    sql = "Udpdate t_Workships Set FIsDeleted=1,FEndDate='" + DateTime.Now.ToString("yyyy-MM-dd") + "'";
+                                    sql = "Update t_Workships Set FIsDeleted=1,FEndDate='" + DateTime.Now.ToString("yyyy-MM-dd") + "'";
                                     sql = sql + " Where FID=" + wsRow["FID"].ToString();
                                     runner.ExecuteSqlNone(sql);
                                 }

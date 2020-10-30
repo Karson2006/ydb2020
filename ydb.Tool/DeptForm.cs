@@ -39,8 +39,8 @@ namespace ydb.Tool
 
         private void ButtonClick(object sender, EventArgs e)
         {
-            try
-            {
+            //try
+            //{
                 Button b = (Button)sender;
                 switch (b.Name.ToUpper())
                 {
@@ -65,11 +65,11 @@ namespace ydb.Tool
                         break;
 
                 }
-            }
-            catch (Exception err)
-            {
-                MessageBox.Show(err.Message, "系统提示"); 
-            }
+            //}
+            //catch (Exception err)
+            //{
+            //    MessageBox.Show(err.Message, "系统提示"); 
+            //}
  
            
         }
