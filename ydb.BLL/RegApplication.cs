@@ -871,6 +871,60 @@ namespace ydb.BLL
             return result;
         }
         #endregion
+
+
+        #region UploadFile
+        public string UploadFile(string xmlString)
+        {
+            string callType = "UploadFile";
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                          "<" + callType + ">" +
+                          "<Result>False</Result>" +
+                          "<Description></Description></" + callType + ">";
+
+            try
+            {
+                string base64String = "", fileName = "", ownerID = "";
+
+                string path = System.Configuration.ConfigurationManager.AppSettings["Path"];
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(xmlString);
+                XmlNode vNode = doc.SelectSingleNode(callType + "/Base64String");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("Base64String不能为空");
+                else
+                    base64String = vNode.InnerText.Trim();
+
+                vNode = doc.SelectSingleNode(callType + "/FileName");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("FileName不能为空");
+                else
+                    fileName = vNode.InnerText.Trim();
+                string fileextra = "";
+                if (fileName.Split('.').Length > 1)
+                    fileextra = fileName.Split('.')[1];
+                byte[] gb = Guid.NewGuid().ToByteArray();
+                long fileID = BitConverter.ToInt64(gb, 0);
+                if (FileHelper.UploadFile(base64String, path, fileID, fileName, ownerID))
+                {
+                    string url = System.Configuration.ConfigurationManager.AppSettings["URL"];
+
+                    result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                          "<" + callType + ">" +
+                          "<Result>True</Result>" +
+                          "<FileUrl>" + url + "/" + path + "/" + fileName + "</FileUrl>" +
+                          "<Description></Description></" + callType + ">";
+
+                }
+            }
+            catch (Exception err)
+            {
+                throw err;
+            }
+            return result;
+        }
+
+        #endregion
     }
 
 }

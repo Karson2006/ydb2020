@@ -1085,7 +1085,7 @@ namespace ydb.WebService
 
         #endregion
 
-        #region UploadFile
+        #region UploadImage
         [WebMethod]
         public string UploadRegImage(string callType, string xmlMessage)
         {
@@ -1173,5 +1173,48 @@ namespace ydb.WebService
 
         #endregion
 
+
+        #region UploadFile
+        [WebMethod]
+        public string UploadFile(string callType, string xmlMessage)
+        {
+
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                           "<" + callType + ">" +
+                           "<Result>False</Result>" +
+                           "<Description></Description></" + callType + ">";
+
+            string logID = Guid.NewGuid().ToString();
+            try
+            {
+
+                FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
+
+                if (Helper.CheckAuthCode(callType, xmlMessage))
+                {
+                    RegApplication regApp = new RegApplication();
+                    result = regApp.UploadFile(xmlMessage);
+                }
+            }
+            catch (Exception err)
+            {
+                result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                          "<" + callType + ">" +
+                          "<Result>False</Result>" +
+                          "<Description>" + err.Message + "</Description></" + callType + ">";
+            }
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
+            return result;
+        }
+
+        [WebMethod]
+        public string UploadFileJson(string callType, string JsonMessage)
+        {
+            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "UploadFile");
+            string result = UploadFile(callType, xmlString);
+            result = iTR.Lib.Common.XML2Json(result, "UploadFile");
+            return result;
+        }
+        #endregion
     }
 }
