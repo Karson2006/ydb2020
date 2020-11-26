@@ -141,43 +141,6 @@ namespace ydb.WebService
             return result;
         }
 
-        #region 已经替换到15的数据接口
-
-        ////流程子页面
-        //[WebMethod]
-        //public string GetPersonFlowReport(string JsonMessage)
-        //{
-        //    string result = "";
-        //    result = GetCompassReport(JsonMessage, "GetPersonFlowReport");
-        //    return result;
-        //}
-        ////支付子页面
-        //[WebMethod]
-        //public string GetPersonPayReport(string JsonMessage)
-        //{
-        //    string result = "";
-        //    result = GetCompassReport(JsonMessage, "GetPersonPayReport");
-        //    return result;
-        //}
-        ////销量子页面
-        //[WebMethod]
-        //public string GetPersonSalesReport(string JsonMessage)
-        //{
-        //    string result = "";
-        //    result = GetCompassReport(JsonMessage, "GetPersonSalesReport");
-        //    return result;
-        //}
-        ////支付查询
-        //[WebMethod]
-        //public string PayQuery(string JsonMessage)
-        //{
-        //    string result = "";
-        //    result = GetCompassReport(JsonMessage, "PayQuery");
-        //    return result;
-        //}
-
-        #endregion 已经替换到15的数据接口
-
         //报表统一入口
         public string GetCompassReport(string JsonMessage, string callType)
         {
@@ -197,30 +160,6 @@ namespace ydb.WebService
                         //没有类型判断，全部获取
                         result = perRpt.GetPersonPerReport(JsonMessage, FormatResult, callType);
                     }
-                    ////流程子页面
-                    //else if (callType == "GetPersonFlowReport")
-                    //{
-                    //    PersonalChildpage perChildRpt = new PersonalChildpage();
-                    //    result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "3");
-                    //}
-                    ////支付子页面
-                    //else if (callType == "GetPersonPayReport")
-                    //{
-                    //    PersonalChildpage perChildRpt = new PersonalChildpage();
-                    //    result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "4");
-                    //}
-                    ////销量子页面
-                    //else if (callType == "GetPersonSalesReport")
-                    //{
-                    //    PersonalChildpage perChildRpt = new PersonalChildpage();
-                    //    result = perChildRpt.GetPersonChildData(JsonMessage, FormatResult, callType, "6");
-                    //}
-                    ////支付查询
-                    //else if (callType == "PayQuery")
-                    //{
-                    //    PersonalChildpage perChildRpt = new PersonalChildpage();
-                    //    result = perChildRpt.PayQuery(JsonMessage, FormatResult, callType);
-                    //}
                 }
             }
             catch (Exception err)
@@ -230,59 +169,5 @@ namespace ydb.WebService
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
         }
-
-        //[WebMethod]
-        ////流程同步
-        //public string SyncFlow(string callType, string xmlMessage)
-        //{
-        //    string result = "";
-        //    result = GetSyncResult(xmlMessage, "SyncFlow");
-        //    return result;
-        //}
-
-        //[WebMethod]
-        ////销量同步
-        //public string SyncSales(string callType, string xmlMessage)
-        //{
-        //    string result = "";
-        //    result = GetSyncResult(xmlMessage, "SyncSales");
-        //    return result;
-        //}
-
-        //[WebMethod]
-        ////支付同步
-        //public string SyncPay(string callType, string xmlMessage)
-        //{
-        //    string result = "";
-        //    result = GetSyncResult(xmlMessage, "SyncPay");
-        //    return result;
-        //}
-
-        ////同步统一入口
-        //public string GetSyncResult(string xmlMessage, string callType)
-        //{
-        //    string logID = Guid.NewGuid().ToString();
-        //    string result = "<GetData>" +
-        //       "<Result>False</Result>" +
-        //       "<Description></Description><DataRows></DataRows></GetData>";
-        //    try
-        //    {
-        //        FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
-        //        if (Helper.CheckAuthCode("GetData", xmlMessage))
-        //        {
-        //            result = OASyncHelper.SyncHelper(xmlMessage, callType);
-        //        }
-        //    }
-        //    catch (Exception err)
-        //    {
-        //        result = "" +
-
-        //                  "<GetData>" +
-        //                  "<Result>False</Result>" +
-        //                  "<Description>" + err.Message + "</Description><DataRows></DataRows></GetData>";
-        //    }
-        //    FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
-        //    return result;
-        //}
     }
 }
