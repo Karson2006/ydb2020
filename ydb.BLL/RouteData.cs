@@ -13,9 +13,9 @@ namespace ydb.BLL
     {
         private const double EARTH_RADIUS = 6378137;
         private Dictionary<string, DateTime> safePost = new Dictionary<string, DateTime>();
+
         public RouteData()
         {
-
         }
 
         #region GetList
@@ -75,10 +75,11 @@ namespace ydb.BLL
 
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
-                //result = Common.DataTableToXml(dt, "GetRouteList", "", "List"); 
+                //result = Common.DataTableToXml(dt, "GetRouteList", "", "List");
                 if (dt.Rows.Count > 0)
                 {
                     #region Set XML Node Value
+
                     doc.LoadXml(result);
                     doc.SelectSingleNode("GetRouteList/Result").InnerText = "True";
 
@@ -161,15 +162,12 @@ namespace ydb.BLL
                         else
                             vNode.InnerText = dt.Rows[indx]["FSignInAddress"].ToString();
                         cNode.AppendChild(vNode);
-
                     }
-                    #endregion
+
+                    #endregion Set XML Node Value
 
                     result = doc.OuterXml;
                 }
-
-
-
             }
             catch (Exception err)
             {
@@ -177,13 +175,15 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
 
+        #endregion GetList
 
         #region GetDetail
+
         public string GetDetail(string routeID)
         {
             #region Build the XML Schema
+
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetRouteDetail>" +
                             "<Result>False</Result>" +
                             "<Description></Description>" +
@@ -205,7 +205,8 @@ namespace ydb.BLL
                             "<FEmployeeName></FEmployeeName>" +
                             "<FInstitutionName></FInstitutionName>" +
                             "</GetRouteDetail>";
-            #endregion
+
+            #endregion Build the XML Schema
 
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(result);
@@ -217,7 +218,6 @@ namespace ydb.BLL
             SQLServerHelper runner = new SQLServerHelper();
             DataTable dt = runner.ExecuteSql(sql);
             result = Common.DataTableToXml(dt, "GetRouteDetail", "", "Main");
-
 
             //if(dt.Rows.Count>0)
             //{
@@ -246,7 +246,8 @@ namespace ydb.BLL
             //result = doc.InnerXml;
             return result;
         }
-        #endregion
+
+        #endregion GetDetail
 
         #region Update
 
@@ -396,7 +397,6 @@ namespace ydb.BLL
                         runner.ExecuteSqlNone(sql);
                     }
                 }
-
             }
             catch (Exception err)
             {
@@ -405,9 +405,11 @@ namespace ydb.BLL
 
             return id;
         }
-        #endregion
+
+        #endregion Update
 
         #region Delete
+
         public string Delete(string routeID)
         {
             string result = "-1";
@@ -427,9 +429,11 @@ namespace ydb.BLL
                 result = "-1";
             return result;
         }
-        #endregion
+
+        #endregion Delete
 
         #region SignIn
+
         public string SignIn(string xmlString)
         {
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><SignIn>" +
@@ -472,7 +476,6 @@ namespace ydb.BLL
                 {
                     vNode.InnerText = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 }
-
 
                 xmlString = doc.OuterXml;
 
@@ -549,9 +552,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion SignIn
 
         #region SignOut
+
         public string SignOut(string xmlString)
         {
             string result = "<SignOut>" +
@@ -609,7 +614,6 @@ namespace ydb.BLL
                                 "<Result>True</Result>" +
                                 "<Description/><RouteID>" + result + "</RouteID>" +
                                 "</SignOut>";
-
             }
             catch (Exception err)
             {
@@ -617,14 +621,16 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion SignOut
 
         public string AutoRoute(string xmlString)
         {
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AutoRoute>" +
                                  "<Result>False</Result>" +
-                                 "<Description><Description/>" +
+                                 "<Description/><RoutID></RoutID>" +
                                  "</AutoRoute>", employeeId, lat, lng, fDate, signTime;
+            return result;
             try
             {
                 XmlDocument doc = new XmlDocument();
@@ -634,46 +640,9 @@ namespace ydb.BLL
                 XmlNode vNode = doc.SelectSingleNode("AutoRoute/EmployeeID");
                 if (vNode == null || vNode.InnerText.Trim().Length == 0)
                     throw new Exception("签到者ID不能为空");
-
                 else
                 {
                     employeeId = doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText.Trim().ToString();
-                }
-
-                //同一个ID不能连续发起签入请求，间隔至少15秒
-                if (safePost.ContainsKey(employeeId))
-                {
-                    //连续请求小于15秒的返回错误信息
-                    if ((DateTime.Now - safePost[employeeId]).TotalSeconds < 15)
-                    {
-                        result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AutoRoute>" +
-            "<Result>false</Result>" + "<Description>连续请求15秒之内，拒绝请求：上次请求时间：" + safePost[employeeId] + "当前请求时间：" + DateTime.Now + "<Description/>" +
-            "</AutoRoute>";
-                        return result;
-                    }
-                    //重新更新请求时间
-                    safePost[employeeId] = DateTime.Now;
-                }
-                else
-                {
-                    if (!safePost.ContainsKey(employeeId))
-                    {
-                        safePost.Add(employeeId, DateTime.Now);
-                        //避免集合太大
-                        if (200<safePost.Count)
-                        {
-                            //移除两分钟之前的元素
-                            foreach (var s in safePost.Where(kv => kv.Value < DateTime.Now.AddMinutes(-2)).ToList())
-                            {
-                                safePost.Remove(s.Key);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        safePost[employeeId] = DateTime.Now;
-                    }
-
                 }
                 vNode = doc.SelectSingleNode("AutoRoute/Date");
                 if (vNode == null)
@@ -700,8 +669,6 @@ namespace ydb.BLL
                 {
                     vNode.InnerText = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 }
-
-
                 signTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 xmlString = doc.OuterXml;
                 vNode = doc.SelectSingleNode("AutoRoute/SignInLat");
@@ -720,82 +687,37 @@ namespace ydb.BLL
                 "<Result>True</Result>" +
                 "<Description>" + result + "<Description/>" +
                 "</AutoRoute>";
-                //根据EmployeeID获取签到地址
-                sql = $"  SELECT sch.FID, isnull(hos.FLatitude,'') FLatitude,isnull(hos.FLongitude,'') FLongitude,item.FName FROM [yaodaibao].[dbo].[Schedule] sch left join [dbo].[t_Hospital] hos on sch.FID = hos.FID left join  [dbo].[t_Items] item on sch.FID = item.FID  where sch.FEmployeeID = '{employeeId}' ";
-
-                DataTable tbmeter = runner.ExecuteSql(sql);
-                int meter = 1000;
-                //避免有可以同时签到的位置 保存签到ID和签到的地址名称
-                Dictionary<string, int> dicDistance = new Dictionary<string, int>();
-                foreach (DataRow row in tbmeter.Rows)
-                {
-
-
-                    //############## 正式发布需要修改以下 签到地址
-                    //meter = (int)GetDistance(121.421861, 31.186788, double.Parse(doc.SelectSingleNode("AutoRoute/SignInLng").InnerText.Replace("-", "")), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLat").InnerText.Replace("-", "")));
-                    meter = (int)GetDistance(double.Parse(row["FLongitude"].ToString()),double.Parse(row["FLatitude"].ToString()), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLng").InnerText.Replace("-", "")), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLat").InnerText.Replace("-", "")));
-
-                    //比较当前位置和签到地址距离 "-" 移除意外字符
-
-                    dicDistance.Add(row["FID"].ToString(),meter);
-                }
-
-                //查找需要签退的地址
-                sql = "Select FID,[FSignOutTime] from RouteData Where FEmployeeID='" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText + "'";
+                double meter = GetDistance(121.421861, 31.186788, double.Parse(doc.SelectSingleNode("AutoRoute/SignInLng").InnerText), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLat").InnerText));
+                //自动签退
+                sql = "Select FID from RouteData Where FEmployeeID='" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText + "'";
                 sql = sql + " And FDate between '" + DateTime.Now.ToString("yyyy-MM-dd") + " 0:0:0.000' And '" + DateTime.Now.ToString("yyyy-MM-dd") + " 23:59:59.999'";
                 sql = sql + " And FSignOutAddress=''";
-                DataTable tbsign = runner.ExecuteSql(sql);
-                if (tbsign.Rows.Count > 0)//存在未签退的签到记录,自动签退
+                //<SignInLat>31.186815</SignInLat><SignInLng>121.42179</SignInLng>
+                DataTable tb = runner.ExecuteSql(sql);
+                //大于300
+                if (meter > 200)
                 {
-                    if (0 < dicDistance.Count)
+                    if (tb.Rows.Count > 0)//存在未签退的签到记录,自动签退
                     {
-                        //根据ID查找签退距离 RouteData FID 和 schedule FID 是相同FID
-                        meter = dicDistance.FirstOrDefault(x => x.Key == tbmeter.Rows[0]["FID"].ToString()).Value;
-                        //大于500签退
-                        if (meter > 200)
-                        {
-                            DataRow row = tbmeter.Rows.Find(tbmeter.Rows[0]["FID"]);                           
-                            sql = $"Update RouteData Set FSignOutAddress ='{row["FName"]}',FSignOutDate='{fDate}',FSignOutTime='{signTime}',FSignOutLat={lat},FSignOutLng={lng},[FDistance] = {meter} where FID ='{tbmeter.Rows[0]["FID"]}'";
-                            runner.ExecuteSqlNone(sql);
-                        }
+                        sql = $"Update RouteData Set FSignOutAddress ='签退地址',FSignOutDate='{fDate}',FSignOutTime='{signTime}',FSignOutLat={lat},FSignOutLng={lng},[FDistance] = {(int)meter} where FID ='{tb.Rows[0]["FID"]}'";
+                        runner.ExecuteSqlNone(sql);
                     }
                 }
-                //签到
+                //小于300判断是签到
                 else
                 {
-                    //先过滤小于500的签到地址 再排序签到地址                    
-                    dicDistance = dicDistance.Where(x => x.Value < 500).ToDictionary(x => x.Key, x => x.Value);
-                    dicDistance = dicDistance.OrderBy(o => o.Value).ToDictionary(o => o.Key, o => o.Value);
-                    if (0 < dicDistance.Count)
+                    if (tb.Rows.Count == 0)//没有要签退的记录，自动签到
                     {
-                        //赋值签退地址
-                        meter = dicDistance.Values.First();
-                        //小于500签到
-                        if (meter < 200)
-                        {
-                            //先查找签到最后一次的签到记录时间
-                            sql = $"SELECT TOP 1 [FSignOutTime] FROM [yaodaibao].[dbo].[RouteData]  where FEmployeeID = '{employeeId}' order by FSignOutTime desc";
-                            tbsign = runner.ExecuteSql(sql);
-                            if (0<tbsign.Rows.Count)
-                            {
-                                //签退之后一定不直接签到 间隔20秒，为了前端异步请求问题                                    
-                                DateTime temptime = Convert.ToDateTime(tbsign.Rows[0]["FSignOutTime"]).AddSeconds(20);
-                                if (0 < DateTime.Compare(DateTime.Now, temptime))
-                                {
-                                    //设置第一列为主键
-                                    tbmeter.PrimaryKey = new DataColumn[] { tbmeter.Columns[0] };
-                                    //根据ID获取签到点名称
-                                    DataRow row = tbmeter.Rows.Find(dicDistance.Keys.First());
-                                    var nullvalue = DBNull.Value;
-                                    sql = $"insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('{Guid.NewGuid()}','{employeeId}','{row["FName"]}','{fDate}','{signTime}',NULL,'{lat}','{lng}',{meter})";
-                                    runner.ExecuteSqlNone(sql);
-                                }
-                            }
-
-                        }
+                        var nullvalue = DBNull.Value;
+                        //sql = "insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('"+Guid.NewGuid()+"','"+employeeId+"','宏汇国际广场','"+fDate+"','"+signTime+"',NULL,'"+lat+"','"+lng+"',"+(int)meter+")";
+                        sql = $"insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('{Guid.NewGuid()}','{employeeId}','宏汇国际广场','{fDate}','{signTime}',NULL,'{lat}','{lng}',{(int)meter})";
+                        runner.ExecuteSqlNone(sql);
                     }
                 }
-                FileLogger.WriteLog("自动定位位置日志:|" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText.ToString() + "|" + result, 1, "", "AutoRoute");
+
+                //方法是状态
+                FileLogger.WriteLog("自动定位End:|" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText.ToString() + "|" + result, 1, "", "AutoRoute");
+
                 result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AutoRoute>" +
                             "<Result>True</Result>" +
                             "</AutoRoute>";
@@ -816,6 +738,7 @@ namespace ydb.BLL
         {
             return (double)d * Math.PI / 180d;
         }
+
         private static double GetDistance(double lat1, double lng1, double lat2, double lng2)
         {
             double radLat1 = Rad(lat1);
