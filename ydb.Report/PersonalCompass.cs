@@ -141,8 +141,8 @@ namespace ydb.Report
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
                 //百分比
-                total = int.Parse((dt.Rows[0]["Total"] == DBNull.Value) ? "0" : dt.Rows[0]["Total"].ToString());
-                okcount = int.Parse(dt.Rows[0]["OKCount"] == DBNull.Value ? "0" : dt.Rows[0]["OKCount"].ToString());
+                total = (int)(double.Parse((dt.Rows[0]["Total"] == DBNull.Value) ? "0" : dt.Rows[0]["Total"].ToString()));
+                okcount = (int)(double.Parse(dt.Rows[0]["OKCount"] == DBNull.Value ? "0" : dt.Rows[0]["OKCount"].ToString()));
                 if (viewType < 5)
                 {
                     if (total == 0)
