@@ -47,7 +47,7 @@ namespace ydb.Report
                 for (int i = 1; i < 9; i++)
                 {
                     //主要区分返回格式 和时间查询问题
-                    if (i == 1 || i == 2)
+                    if (i == 1 || i == 2 || i == 3 || i == 4)
                     {
                         rdataRow = GetDataRow(i, rowcontent, routeEntity.EmployeeId, startTime.ToString("yyyy-MM-dd"), endTime.ToString("yyyy-MM-dd"), "");
                         dataRowList.Add(rdataRow);
@@ -57,6 +57,10 @@ namespace ydb.Report
                     {
                         //进销存
                         panelRow += GetDataRow(i, rowcontent, routeEntity.EmployeeId, "", "", yearweek);
+                    }
+                    else if (i == 6)
+                    {
+                        panelRow += GetDataRow(i, rowcontent, routeEntity.EmployeeId, startTime.ToString("yyyy-MM-dd"), endTime.ToString("yyyy-MM-dd"), "");
                     }
                     else
                     {
@@ -112,7 +116,17 @@ namespace ydb.Report
                         viewName = "拜访";
                         sql = $"SELECT  ISNULL(SUM([CallCount]),0) Total ,ISNULL(SUM([CallCount] - [UnPlanedCallCount]),0) OKCount FROM [yaodaibao].[dbo].[Route_Call_View] where '{startTime}' <= FDate  and  FDate <= '{ endTime }' and FEmployeeID in ({EmployeeId})";
                         break;
-
+                    //3,流程
+                    case 3:
+                        viewName = "流程";
+                        sql = $"Select  count(*) As Total , sum(case FState when '完成' then 1 Else 0 End) As OKCount From [yaodaibao].[dbo].[OAProcessStatus] where '{startTime}' <= [FStart_Date]  and  [FStart_Date] <= '{ endTime }' and FStart_Member_ID in ({EmployeeId})";
+                        break;
+                    //4,支付
+                    case 4:
+                        viewName = "支付";
+                        sql = $"select  sum(Ffield0008) Total,sum(Ffield0008-Ffield0034) OKCount   FROM [yaodaibao].[dbo].[formmain_3460]  where '{startTime}' <= [FStart_Date]  and  [FStart_Date] <= '{ endTime }' and Ffield0006 in ('{EmployeeId}')";
+                        break;
+                    //5,艾夫吉夫
                     case 5:
                         viewName = "艾夫吉夫";
 
@@ -126,7 +140,11 @@ namespace ydb.Report
                         }
                         sql = $"select SUM(FStock_IB) StockIB,SUM(FStock_IN) Total,SUM(FStock_EB) StockEB,SUM(FSaleAmount) OKCount from [yaodaibao].[dbo].[HospitalStock_Detail] where FFormmainID in (SELECT FID FROM [yaodaibao].[dbo].[HospitalStock] where {partsql} and FEmployeeID in({EmployeeId}) and FProductID = '69d55ff7-d9d6-4f20-bcbc-b5244894f36e' )";
                         break;
-
+                    // 6,销量
+                    case 6:
+                        viewName = "数量";
+                        sql = $"select SUM(Ffield0008) Total,SUM(Ffield0008) OKCount  from [yaodaibao].[dbo].[formmain_6786]  where Ffield0011 in ('人员') and  '{startTime}' <= [FStart_Date]  and  [FStart_Date] <= '{ endTime }' and Ffield0014 in ('{EmployeeId}')";
+                        break;
                     // 7,待支付金额
                     case 7:
                         viewName = "待支付金额";
@@ -163,8 +181,13 @@ namespace ydb.Report
                     //艾夫吉夫
                     if (viewType == 5)
                     {
-                        //加,拼后面的json 已经修改到15 不加，
-                        tempresult = $"\"AFJFName\":\"艾夫吉夫\",\"AFJFCount\":{okcount},\"AFJFProductID\":\"69d55ff7-d9d6-4f20-bcbc-b5244894f36e\"";
+                        //加,拼后面的json
+                        tempresult = $"\"AFJFName\":\"艾夫吉夫\",\"AFJFCount\":{okcount},\"AFJFProductID\":\"69d55ff7-d9d6-4f20-bcbc-b5244894f36e\"" + ",";
+                    }
+                    //销量
+                    else if (viewType == 6)
+                    {
+                        tempresult = $"\"SalesName\":\"数量\",\"SalesCount\":{okcount}";
                     }
                 }
             }
