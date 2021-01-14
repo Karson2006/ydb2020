@@ -10,11 +10,10 @@ namespace ydb.Report
 {
     public class PersonalCompass
     {
-
         public string GetPersonPerReport(string dataString, string FormatResult, string callType)
         {
-            //加,连接起前面的json字符串                                                                      
-            string result = "", rdataRow, datarows, yearweek="", panelRow = "", weekindex = ",\"FWeekIndex\":";
+            //加,连接起前面的json字符串
+            string result = "", rdataRow, datarows, yearweek = "", panelRow = "", weekindex = ",\"FWeekIndex\":";
             List<string> dataRowList = new List<string>();
             //初始化状态
             //   result = string.Format(FormatResult, callType, "\"False\"", "", "");
@@ -47,7 +46,6 @@ namespace ydb.Report
                 //目前有些数据没有，暂时跳过
                 for (int i = 1; i < 9; i++)
                 {
-  
                     //主要区分返回格式 和时间查询问题
                     if (i == 1 || i == 2 || i == 3 || i == 4)
                     {
@@ -60,7 +58,7 @@ namespace ydb.Report
                         //进销存
                         panelRow += GetDataRow(i, rowcontent, routeEntity.EmployeeId, "", "", yearweek);
                     }
-                    else if(i == 6)
+                    else if (i == 6)
                     {
                         panelRow += GetDataRow(i, rowcontent, routeEntity.EmployeeId, startTime.ToString("yyyy-MM-dd"), endTime.ToString("yyyy-MM-dd"), "");
                     }
@@ -68,14 +66,11 @@ namespace ydb.Report
                     {
                         continue;
                     }
-
-
                 }
                 //加，拼接下面的json
                 datarows = string.Join(",", dataRowList.ToArray()) + ",";
                 //最后结果
                 result = string.Format(FormatResult, callType, "\"True\"", "\"\"", "{\"DataRow\":[" + datarows + "{" + panelRow + weekindex + "}" + "]}");
-
             }
             catch (Exception err)
             {
@@ -83,8 +78,9 @@ namespace ydb.Report
             }
             return result;
         }
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="startTime"></param>
         /// <param name="endTime"></param>
@@ -99,8 +95,6 @@ namespace ydb.Report
             int total, okcount, per;
             try
             {
-
-
                 //产品多的时候 获取前两个产品 select t1.FProductID,t2.FProductName from ( select top 2 FProductID, COUNT(FProductID) as ProductCount from [yaodaibao].[dbo].[HospitalStock] group by FProductID order by ProductCount desc)  t1 left join (Select FID AS  FProductID, FName As FProductName From t_Items Where FClassID = '36d33d13-4f8b-4ee4-84c5-49ff7c8691c4' and FIsDeleted=0 )  t2 on t1.FProductID = t2.FProductID
 
                 //SQLServerHelper runner = new SQLServerHelper();
@@ -165,11 +159,10 @@ namespace ydb.Report
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
                 //百分比
-                total = int.Parse((dt.Rows[0]["Total"] == DBNull.Value) ? "0" : dt.Rows[0]["Total"].ToString());
-                okcount = int.Parse(dt.Rows[0]["OKCount"] == DBNull.Value ? "0" : dt.Rows[0]["OKCount"].ToString());
+                total = (int)(double.Parse((dt.Rows[0]["Total"] == DBNull.Value) ? "0" : dt.Rows[0]["Total"].ToString()));
+                okcount = (int)(double.Parse(dt.Rows[0]["OKCount"] == DBNull.Value ? "0" : dt.Rows[0]["OKCount"].ToString()));
                 if (viewType < 5)
                 {
- 
                     if (total == 0)
                     {
                         per = 0;
@@ -180,7 +173,7 @@ namespace ydb.Report
                     }
                     //获取配置文件
                     routeconfig = Common.GetCompassConfigFromXml("Route").Replace("Quot", "\"");
-                    //DataRow数据            
+                    //DataRow数据
                     tempresult = string.Format(rowContent, per, (100 - per), routeconfig, viewName, viewType, per + "%", total.ToString(), startTime, endTime);
                 }
                 else
@@ -188,13 +181,12 @@ namespace ydb.Report
                     //艾夫吉夫
                     if (viewType == 5)
                     {
-
                         //加,拼后面的json
                         tempresult = $"\"AFJFName\":\"艾夫吉夫\",\"AFJFCount\":{okcount},\"AFJFProductID\":\"69d55ff7-d9d6-4f20-bcbc-b5244894f36e\"" + ",";
                     }
                     //销量
                     else if (viewType == 6)
-                    {                       
+                    {
                         tempresult = $"\"SalesName\":\"数量\",\"SalesCount\":{okcount}";
                     }
                 }
@@ -206,5 +198,4 @@ namespace ydb.Report
             return tempresult;
         }
     }
-
 }

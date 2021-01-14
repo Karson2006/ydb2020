@@ -16,11 +16,10 @@ namespace ydb.WebService
     [WebService(Namespace = "http://tempuri.org/")]
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
-    // 若要允许使用 ASP.NET AJAX 从脚本中调用此 Web 服务，请取消注释以下行。 
+    // 若要允许使用 ASP.NET AJAX 从脚本中调用此 Web 服务，请取消注释以下行。
     // [System.Web.Script.Services.ScriptService]
     public class ReportDataInvoke : System.Web.Services.WebService
     {
-
         [WebMethod]
         public string GetCallReport1(string xmlMessage)
         {
@@ -30,7 +29,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", "GetCallReport1");
 
                 if (Helper.CheckAuthCode("GetData", xmlMessage))
@@ -50,7 +48,6 @@ namespace ydb.WebService
             return result;
         }
 
-
         [WebMethod]
         public string GetCallReport1Json(string JsonMessage)
         {
@@ -69,7 +66,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", "GetCallRepotr2");
 
                 if (Helper.CheckAuthCode("GetData", xmlMessage))
@@ -88,7 +84,6 @@ namespace ydb.WebService
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", "GetCallRepotr2");
             return result;
         }
-
 
         [WebMethod]
         public string GetCallReport2Json(string JsonMessage)
@@ -115,7 +110,6 @@ namespace ydb.WebService
                     CallRpt rpt = new CallRpt();
                     result = rpt.ExportCallReport(xmlMessage);
                 }
-
             }
             catch (Exception err)
             {
@@ -137,6 +131,7 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetData");
             return result;
         }
+
         //一级个人页面
         [WebMethod]
         public string GetPersonSummaryReport(string JsonMessage)
@@ -145,6 +140,9 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonSummaryReport");
             return result;
         }
+
+        #region 已经替换到15的数据接口
+
         //流程子页面
         [WebMethod]
         public string GetPersonFlowReport(string JsonMessage)
@@ -153,6 +151,7 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonFlowReport");
             return result;
         }
+
         //支付子页面
         [WebMethod]
         public string GetPersonPayReport(string JsonMessage)
@@ -161,6 +160,7 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonPayReport");
             return result;
         }
+
         //销量子页面
         [WebMethod]
         public string GetPersonSalesReport(string JsonMessage)
@@ -169,6 +169,7 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "GetPersonSalesReport");
             return result;
         }
+
         //支付查询
         [WebMethod]
         public string PayQuery(string JsonMessage)
@@ -177,6 +178,9 @@ namespace ydb.WebService
             result = GetCompassReport(JsonMessage, "PayQuery");
             return result;
         }
+
+        #endregion 已经替换到15的数据接口
+
         //报表统一入口
         public string GetCompassReport(string JsonMessage, string callType)
         {
@@ -186,7 +190,7 @@ namespace ydb.WebService
 
             try
             {
-                FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", callType);
+                FileLogger.WriteLog(logID + "|Start:" + JsonMessage + " FormatResult:" + FormatResult, 1, "", callType);
                 if (Helper.CheckAuthCode("GetData", JsonMessage, "json"))
                 {
                     //罗盘主页
@@ -230,8 +234,6 @@ namespace ydb.WebService
             return result;
         }
 
-
-
         [WebMethod]
         //流程同步
         public string SyncFlow(string callType, string xmlMessage)
@@ -240,6 +242,7 @@ namespace ydb.WebService
             result = GetSyncResult(xmlMessage, "SyncFlow");
             return result;
         }
+
         [WebMethod]
         //销量同步
         public string SyncSales(string callType, string xmlMessage)
@@ -248,6 +251,7 @@ namespace ydb.WebService
             result = GetSyncResult(xmlMessage, "SyncSales");
             return result;
         }
+
         [WebMethod]
         //支付同步
         public string SyncPay(string callType, string xmlMessage)
@@ -256,6 +260,7 @@ namespace ydb.WebService
             result = GetSyncResult(xmlMessage, "SyncPay");
             return result;
         }
+
         //同步统一入口
         public string GetSyncResult(string xmlMessage, string callType)
         {

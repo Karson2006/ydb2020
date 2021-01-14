@@ -12,12 +12,10 @@ namespace ydb.BLL
 {
     public class RegApplication
     {
-
         public RegApplication()
         { }
 
         #region List
-
 
         //public string List(string filter = "")
         //{
@@ -46,12 +44,14 @@ namespace ydb.BLL
         //    }
         //    return result;
         //}
-        #endregion
+
+        #endregion List
 
         #region Update
+
         public string Update(string dataString)
         {
-            string id = "", sql = "", valueString = "", result = "-1",val = "",mobile="";
+            string id = "", sql = "", valueString = "", result = "-1", val = "", mobile = "";
 
             SQLServerHelper runner = new SQLServerHelper();
             try
@@ -69,7 +69,7 @@ namespace ydb.BLL
                 }
 
                 vNode = doc.SelectSingleNode("UpdateRegistration/ID");
-                if (vNode==null ||vNode.InnerText.Trim()=="-1")//新增
+                if (vNode == null || vNode.InnerText.Trim() == "-1")//新增
                 {
                     //if(val.Trim().Length ==0)
                     //    throw new Exception("手机号码不能为空");
@@ -82,10 +82,10 @@ namespace ydb.BLL
                     //        id = dt.Rows[0]["FID"].ToString();
                     //    else
                     //    {
-                            id = Guid.NewGuid().ToString();
-                            sql = "Insert into Reg_Application(FID) Values('" + id + "')";
-                            if (runner.ExecuteSqlNone(sql) < 0)//插入新日程失败
-                                throw new Exception("新建失败");
+                    id = Guid.NewGuid().ToString();
+                    sql = "Insert into Reg_Application(FID) Values('" + id + "')";
+                    if (runner.ExecuteSqlNone(sql) < 0)//插入新日程失败
+                        throw new Exception("新建失败");
                     //    }
                     //}
                 }
@@ -95,7 +95,7 @@ namespace ydb.BLL
                 }
                 //更新信息
                 vNode = doc.SelectSingleNode("UpdateRegistration/Applicant");
-                
+
                 if (vNode != null)
                 {
                     val = vNode.InnerText;
@@ -109,7 +109,6 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FRegType='" + val + "',";
                 }
-               
 
                 vNode = doc.SelectSingleNode("UpdateRegistration/Registed");
                 if (vNode != null)
@@ -220,9 +219,11 @@ namespace ydb.BLL
 
             return result;
         }
-        #endregion
+
+        #endregion Update
 
         #region GetDetail
+
         public string GetDetail(string xmlString)
         {
             string result = "", id = "", sql = "", cols = "";
@@ -247,7 +248,7 @@ namespace ydb.BLL
                 { }
                 else
                     pageIDs = vNode.InnerText.Trim().Split('|');
-                
+
                 sql = "SELECT t1.FID,t1.FApplicant,t1.FMobile ,t1.FRegType,t1.FDate,t1.FProductTypeID,t1.FProductID ,t1.FProvinceID ,t1.FCityID,FCountryID,t1.FHospitalID,t1.FApproverID,t1.FApproveDate," +
                     " isnull(t2.FName,'') As FProductName,isnull(t3.FName,'') As FProvinceName,isnull(t4.FName,'') As FCityName,isnull(t5.FName,'') As FCountryName,isnull(t6.FName,'')As FHospitalName," +
                     " t1.FHistoryPerformance,t1.FForecastPerformance,ISnull(t7.FName,'') As FProductTypeName " +
@@ -261,7 +262,7 @@ namespace ydb.BLL
 
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
-                result = iTR.Lib.Common.DataTableToXml(dt, "GetRegistrationData", cols,"List");
+                result = iTR.Lib.Common.DataTableToXml(dt, "GetRegistrationData", cols, "List");
 
                 //加载图片
                 doc.LoadXml(result);
@@ -272,7 +273,6 @@ namespace ydb.BLL
                 {
                     for (int i = 0; i < pageIDs.Length; i++)
                     {
-
                         switch (pageIDs[i])
                         {
                             case "Reg002"://历史业绩
@@ -302,7 +302,6 @@ namespace ydb.BLL
                 }
 
                 result = doc.OuterXml;
-
             }
             catch (Exception err)
             {
@@ -310,9 +309,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
 
-        #region   UpdateRegApplicant
+        #endregion GetDetail
+
+        #region UpdateRegApplicant
+
         public string UpdateRegApplicant(string dataString)
         {
             string id = "", sql = "", result = "-1", regType = "0";
@@ -341,7 +342,6 @@ namespace ydb.BLL
 
                 if (regType == "0")
                     result = UpdateRepresentative(dataString);
-
             }
             catch (Exception err)
             {
@@ -422,11 +422,10 @@ namespace ydb.BLL
                 else
                 {
                     sql = "Insert Into Reg_Representative(FApplicationID,FName,FIDNumber,FGender,FEducation,FMajorID,FMobile,FAddress,FExperience,FCompanyID)" +
-                        " Values('"  + id + "','" + name + "','" + idNumber + "','" + gerder + "','" + education + "','" + major + "','" + mobile + "','" + address + "','" + experience + "','" + companyID + "')";
+                        " Values('" + id + "','" + name + "','" + idNumber + "','" + gerder + "','" + education + "','" + major + "','" + mobile + "','" + address + "','" + experience + "','" + companyID + "')";
                 }
                 runner.ExecuteSqlNone(sql);
                 result = "1";
-
             }
             catch (Exception err)
             {
@@ -434,12 +433,14 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion UpdateRegApplicant
 
         #region GetRegApplicant
+
         public string GetRegApplicant(string xmlString)
         {
-            string result = "", id = "", sql = "", cols = "",regType="0";
+            string result = "", id = "", sql = "", cols = "", regType = "0";
             try
             {
                 XmlDocument doc = new XmlDocument();
@@ -456,14 +457,12 @@ namespace ydb.BLL
                 else
                     cols = vNode.InnerText.Trim();
 
-
                 vNode = doc.SelectSingleNode("GetRegistrationData/RegType");
                 if (vNode == null || vNode.InnerText.Trim().Length == 0)
                 {
                 }
                 else
                     regType = vNode.InnerText.Trim();
-
 
                 if (regType == "0")
                 {
@@ -473,15 +472,14 @@ namespace ydb.BLL
                 }
                 else
                 {
-
                 }
                 //sql = " Select t1.FApplicationID,t1.FName,t1.FIDNumber,t1.FGender,t1.FEducation,t1.FMajorID,t1.FMobile,t1.FAddress,t1.FExperience,t1.FCompanyID,isnull(t2.FName,'') As FMajorName" +
                 //      " From  Reg_Representative t1" +
                 //      " Left Join t_Items t2 On t1.FMajorID= t2.FID  Where t1.FMobile='" + id + "' Order by t1.FSortIndx Desc";
-                
+
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
-                result = iTR.Lib.Common.DataTableToXml(dt, "GetRegistrationData", cols,"List");
+                result = iTR.Lib.Common.DataTableToXml(dt, "GetRegistrationData", cols, "List");
 
                 if (dt.Rows.Count > 0)
                     id = dt.Rows[0]["FApplicationID"].ToString();
@@ -498,7 +496,6 @@ namespace ydb.BLL
                 }
 
                 result = doc.OuterXml;
-
             }
             catch (Exception err)
             {
@@ -506,12 +503,14 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion GetRegApplicant
 
         #region UpdateRegRelationship
+
         public string UpdateRegRelationship(string xmlString)
         {
-            string result = "-1", sql = "",id="",hospitalID="";
+            string result = "-1", sql = "", id = "", hospitalID = "";
 
             DataTable dt = null;
             try
@@ -521,7 +520,7 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("UpdateRegistration/ID");
-                if(vNode==null||vNode.InnerText.Trim().Length ==0)
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
                     throw new Exception("ID不能为空");
                 else
                 {
@@ -545,7 +544,7 @@ namespace ydb.BLL
                 runner.ExecuteSqlNone(sql);
 
                 XmlNode dataNode = doc.SelectSingleNode("UpdateRegistration/Datas");
-                foreach(XmlNode node in dataNode.ChildNodes)
+                foreach (XmlNode node in dataNode.ChildNodes)
                 {
                     string name = node["Name"].InnerText;
                     string title = node["Title"].InnerText;
@@ -559,7 +558,6 @@ namespace ydb.BLL
                 }
 
                 result = id;
-
             }
             catch (Exception err)
             {
@@ -567,9 +565,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion UpdateRegRelationship
 
         #region GetRegRelationShip
+
         public string GetRegRelationShip(string xmlString)
         {
             string result = "", id = "", sql = "";
@@ -590,7 +590,7 @@ namespace ydb.BLL
                 sql = sql + " Where FApplicationID='" + id + "'";
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
-                result = iTR.Lib.Common.DataTableToXml(dt, "GetRegistrationData","","List");
+                result = iTR.Lib.Common.DataTableToXml(dt, "GetRegistrationData", "", "List");
             }
             catch (Exception err)
             {
@@ -598,9 +598,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion GetRegRelationShip
 
         #region SendVCode
+
         public string SendVCode(string xmlString)
         {
             string result = "", mobile = "", sql = "";
@@ -619,9 +621,9 @@ namespace ydb.BLL
                     throw new Exception("Mobile不能为空");
                 else
                     mobile = vNode.InnerText.Trim();
-                string curTime= DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                string curTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
-                sql = "Select FCode from VCodes Where '" + curTime + "' Between FCreateTime and FExpireTime and FStatus =0 and FMobile='"+ mobile +"'";
+                sql = "Select FCode from VCodes Where '" + curTime + "' Between FCreateTime and FExpireTime and FStatus =0 and FMobile='" + mobile + "'";
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)//存在未验证且在有限期内
@@ -634,7 +636,7 @@ namespace ydb.BLL
                     vCode = ran.Next(1000, 9999).ToString();
                 }
                 AliDayuSMS smsSender = new AliDayuSMS();
-                if (smsSender.SendSms(vCode, mobile)=="1" && dt.Rows.Count ==0)//发送成功,且不存在该记录
+                if (smsSender.SendSms(vCode, mobile) == "1" && dt.Rows.Count == 0)//发送成功,且不存在该记录
                 {
                     DateTime expireTime = DateTime.Now.AddMinutes(5);
                     sql = "Insert Into VCodes(FMobile,FCode)Values('" + mobile + "','" + vCode + "')";
@@ -647,7 +649,6 @@ namespace ydb.BLL
                               "<Description>OK</Description></" + callType + ">";
                     }
                 }
-                
             }
             catch (Exception err)
             {
@@ -655,13 +656,14 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
 
+        #endregion SendVCode
 
         #region CheckVCode
+
         public string CheckVCode(string xmlString)
         {
-            string result = "0", mobile = "", sql = "",code="";
+            string result = "0", mobile = "", sql = "", code = "";
 
             string callType = "CheckVCode";
             result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
@@ -674,25 +676,25 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("CheckVCode/Mobile");
-               if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
                     throw new Exception("Mobile不能为空");
                 else
-                   mobile = vNode.InnerText.Trim();
+                    mobile = vNode.InnerText.Trim();
 
                 vNode = doc.SelectSingleNode("CheckVCode/Code");
                 if (vNode == null || vNode.InnerText.Trim().Length == 0)
                     throw new Exception("Code不能为空");
                 else
                     code = vNode.InnerText.Trim();
-                string curTime= DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                string curTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
 
                 sql = "Select FExpireTime From VCodes Where FMobile='" + mobile + "' and FCode ='" + code + "' and FStatus =0 and  '" + curTime + "' Between FCreateTime and FExpireTime";
-                
+
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count == 0)//
-                { 
-                   throw new Exception("验证码错误或已过期");
+                {
+                    throw new Exception("验证码错误或已过期");
                 }
                 else
                 {
@@ -702,11 +704,7 @@ namespace ydb.BLL
                          "<" + callType + ">" +
                          "<Result>True</Result>" +
                          "<Description>验证码正确</Description></" + callType + ">";
-
                 }
-               
-
-               
             }
             catch (Exception err)
             {
@@ -714,9 +712,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion CheckVCode
 
         #region UploadImage
+
         public string UploadImage(string xmlString)
         {
             string callType = "UploadRegImage";
@@ -770,11 +770,11 @@ namespace ydb.BLL
                 else
                     ownerID = vNode.InnerText.Trim();
 
-                if (int.Parse(fileNos[1])>9)
+                if (int.Parse(fileNos[1]) > 9)
                 {
                     throw new Exception("拟上传的附件个数已大于最大数9");
                 }
-                else if(int.Parse( fileNos[0])==1)//上传第一个附件，删除数据库中的相干附件
+                else if (int.Parse(fileNos[0]) == 1)//上传第一个附件，删除数据库中的相干附件
                 {
                     string sql = "Update Attachments Set FDeleted=1 where FPageID='{0}' and FOwnerID='{1}' ";
                     sql = string.Format(sql, formId, ownerID);
@@ -790,10 +790,10 @@ namespace ydb.BLL
                 if (int.Parse(fileNos[1]) > 0)
                 {
                     string fileextra = "jpg";
-                    if (fileName.Split('.').Length > 1) 
-                        fileextra=fileName.Split('.')[1];
+                    if (fileName.Split('.').Length > 1)
+                        fileextra = fileName.Split('.')[1];
 
-                        fileName = Guid.NewGuid().ToString().Replace("-", "") + "." + fileextra;
+                    fileName = Guid.NewGuid().ToString().Replace("-", "") + "." + fileextra;
                     if (FileHelper.UploadImage(base64String, path, fileName, formId, ownerID))
                     {
                         string url = System.Configuration.ConfigurationManager.AppSettings["URL"];
@@ -804,7 +804,6 @@ namespace ydb.BLL
                               "<ImageUrl>" + url + "/" + path + "/" + fileName + "</ImageUrl>" +
                               "<T_ImageUrl>" + url + "/" + path + "/T_" + fileName + "</T_ImageUrl>" +
                               "<Description></Description></" + callType + ">";
-
                     }
                 }
             }
@@ -814,9 +813,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion UploadImage
 
         #region GetImage
+
         public string GetImage(string xmlString)
         {
             string callType = "GetRegImage";
@@ -852,7 +853,6 @@ namespace ydb.BLL
 
                 if (dt.Rows.Count > 0)
                 {
-                    
                     string imageString = "";
                     foreach (DataRow row in dt.Rows)
                     {
@@ -861,7 +861,7 @@ namespace ydb.BLL
                     }
                     result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                              "<" + callType + ">" +
-                             "<Result>True</Result><Rows>"+imageString+ "</Rows><Description></Description></" + callType + ">";
+                             "<Result>True</Result><Rows>" + imageString + "</Rows><Description></Description></" + callType + ">";
                 }
             }
             catch (Exception err)
@@ -870,7 +870,79 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
-    }
 
+        #endregion GetImage
+
+        #region UploadFile
+
+        public string UploadFile(string xmlString)
+        {
+            string callType = "UploadFile";
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                          "<" + callType + ">" +
+                          "<Result>False</Result>" +
+                          "<Description></Description></" + callType + ">";
+            try
+            {
+                string base64String = "", fileName = "", ownerID = "", fileSize = "", mimeType = "";
+
+                string path = System.Configuration.ConfigurationManager.AppSettings["Path"];
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(xmlString);
+                XmlNode vNode = doc.SelectSingleNode(callType + "/Base64String");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("Base64String不能为空");
+                else
+                    base64String = vNode.InnerText.Trim();
+
+                vNode = doc.SelectSingleNode(callType + "/FileName");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("FileName不能为空");
+                else
+                    fileName = vNode.InnerText.Trim();
+
+                vNode = doc.SelectSingleNode(callType + "/FileSize");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("FileSize不能为空");
+                else
+                    fileSize = vNode.InnerText.Trim();
+
+                vNode = doc.SelectSingleNode(callType + "/MimeType");
+
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("MimeType不能为空");
+                else
+                    mimeType = vNode.InnerText.Trim();
+
+                byte[] gb = Guid.NewGuid().ToByteArray();
+                long fileID = BitConverter.ToInt64(gb, 0);
+                string sql = string.Format("insert into [yaodaibao].[dbo].[CTP_FILE](ID,FILENAME,MIME_TYPE,CREATE_DATE,CREATE_MEMBER,FILE_SIZE) values('{0}','{1}','{2}','{3}','{4}','{5}')", new object[]
+                {
+                    fileID,
+                    fileName,
+                    mimeType,
+                    DateTime.Now.ToString(),
+                    "",
+                    fileSize
+                });
+                if (FileHelper.UploadFile(base64String, path, fileID, sql))
+                {
+                    string url = System.Configuration.ConfigurationManager.AppSettings["URL"];
+
+                    result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                          "<" + callType + ">" +
+                          "<Result>True</Result>" +
+                          "<FileID>" + fileID + "</FileID>" +
+                          "<Description></Description></" + callType + ">";
+                }
+            }
+            catch (Exception err)
+            {
+                throw err;
+            }
+            return result;
+        }
+
+        #endregion UploadFile
+    }
 }
