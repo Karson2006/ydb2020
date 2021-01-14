@@ -11,13 +11,15 @@ namespace ydb.BLL
 {
     public class Department
     {
-        Items iClass;
+        private Items iClass;
+
         public Department()
         {
             iClass = new Items();
         }
 
         #region GetDepartmentDetail
+
         public string GetDepartmentDetail(string xmlString)
         {
             string result = "";
@@ -26,28 +28,30 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("GetDepartmentDetail/ID");
-                if (vNode == null || vNode.InnerText.Trim().Length==0)
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
                 {
                     throw new Exception("ID不能为空");
                 }
                 else
                 {
                     xmlString = xmlString.Replace("GetDepartmentDetail>", "GetDepartmentList>");
-                    result = GetDepartmentList(xmlString).Replace("GetDepartmentList>","GetDepartmentDetail>");
+                    result = GetDepartmentList(xmlString).Replace("GetDepartmentList>", "GetDepartmentDetail>");
                 }
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
-        #endregion
+
+        #endregion GetDepartmentDetail
 
         #region GetDepartmentList
+
         public string GetDepartmentList(string xmlString)
         {
-            string result = "",sql="",filter="t1.FIsDeleted=0 ",val="";
+            string result = "", sql = "", filter = "t1.FIsDeleted=0 ", val = "";
             SQLServerHelper runner;
 
             try
@@ -55,10 +59,10 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("GetDepartmentList/ID");
-                if(vNode!=null)
+                if (vNode != null)
                 {
                     val = vNode.InnerText.Trim();
-                    if(val.Length>0)
+                    if (val.Length > 0)
                         filter = filter.Length > 0 ? filter = filter + " And t1.FID='" + val + "'" : "t1.FID='" + val + "'";
                 }
 
@@ -67,7 +71,7 @@ namespace ydb.BLL
                 {
                     val = vNode.InnerText.Trim();
                     if (val.Length > 0)
-                        filter = filter.Length >0 ? filter = filter + " And t2.FName like '%" + val + "%'":"t2.FName like '%" + val + "%'";
+                        filter = filter.Length > 0 ? filter = filter + " And t2.FName like '%" + val + "%'" : "t2.FName like '%" + val + "%'";
                 }
                 vNode = doc.SelectSingleNode("GetDepartmentList/Number");
                 if (vNode != null)
@@ -84,15 +88,15 @@ namespace ydb.BLL
                         filter = filter.Length > 0 ? filter = filter + " And t3.FName like '%" + val + "%'" : " t3.FName like '%" + val + "%'";
                 }
 
-                sql = "Select t1.*,t2.FName,t2.FNumber,t2.FFullNumber,t2.FParentID,t4.FName As FParentName,t3.FName As FSupervisorName,t2.FClassID,"+
-                    " t2.FLevel,t2.FDescription,t2.FLevel,t2.FIsDetail"+
-                    " From t_departments t1"+
-                    " Left Join t_Items t2 On t1.FID=t2.FID"+
-                    " Left Join t_Items t3 On t3.FID= t1.FSupervisorID"+
+                sql = "Select t1.*,t2.FName,t2.FNumber,t2.FFullNumber,t2.FParentID,t4.FName As FParentName,t3.FName As FSupervisorName,t2.FClassID," +
+                    " t2.FLevel,t2.FDescription,t2.FLevel,t2.FIsDetail" +
+                    " From t_departments t1" +
+                    " Left Join t_Items t2 On t1.FID=t2.FID" +
+                    " Left Join t_Items t3 On t3.FID= t1.FSupervisorID" +
                     " Left Join t_Items t4 On t4.FID= t2.FParentID";
                 if (filter.Length > 0)
                     sql = sql + " Where " + filter;
-                sql = sql + " order by t1.FSortIndex Asc"; 
+                sql = sql + " order by t1.FSortIndex Asc";
 
                 runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
@@ -173,7 +177,6 @@ namespace ydb.BLL
                         vNode = doc.CreateElement("FIsPartTime");
                         vNode.InnerText = row["FIsPartTime"].ToString();
                         cNode.AppendChild(vNode);
-
                     }
                     result = doc.OuterXml;
                 }
@@ -190,12 +193,14 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion GetDepartmentList
 
         #region Update
+
         public string Update(string dataString)
         {
-            string id = "", sql = "",  valueString = "",leaderId="-1";
+            string id = "", sql = "", valueString = "", leaderId = "-1";
             string result = "-1", action = "1";
             int editMode = 1;
 
@@ -213,9 +218,9 @@ namespace ydb.BLL
                 if (vNode != null && vNode.InnerText.Trim().Length > 0 && vNode.InnerText.Trim() != "-1")
                 {
                     val = vNode.InnerText.Trim();
-                    
-                        valueString = valueString + "FSupervisorID='" + val + "',";
-                        leaderId = val;
+
+                    valueString = valueString + "FSupervisorID='" + val + "',";
+                    leaderId = val;
                 }
                 else
                     throw new Exception("部门主管ID不能为空");
@@ -241,7 +246,7 @@ namespace ydb.BLL
                         editMode = 2;
                 }
 
-                if (editMode==1)//新增
+                if (editMode == 1)//新增
                 {
                     sql = "Insert into t_Departments(FID) Values('" + id + "')";
                     if (runner.ExecuteSqlNone(sql) < 0)//插入部门失败
@@ -280,9 +285,8 @@ namespace ydb.BLL
                         id = "-1";
                         throw new Exception("更新失败");
                     }
-
                 }
-                if(leaderId!="-1")//主管更新,维护t_Workships表
+                if (leaderId != "-1")//主管更新,维护t_Workships表
                 {
                     WorkShip ws = new WorkShip();
                     ws.Update(leaderId, id);
@@ -290,7 +294,7 @@ namespace ydb.BLL
             }
             catch (Exception err)
             {
-                if(id!="-1")//t_tems已插入数据成功，要删除
+                if (id != "-1")//t_tems已插入数据成功，要删除
                 {
                     sql = "Delete from t_Items Where FID='" + id + "'  Delete from t_Departments Where FID='" + id + "'";
                     runner.ExecuteSqlNone(sql);
@@ -302,10 +306,10 @@ namespace ydb.BLL
             return result;
         }
 
-        
-        #endregion  
+        #endregion Update
 
         #region Delete
+
         public string Delete(string xmlString)
         {
             string result = "-1", id = "-1", sql = "";
@@ -316,9 +320,9 @@ namespace ydb.BLL
                 xmlString = xmlString.Replace("DeleteDepartment>", "DeleteItem>");
                 Items item = new Items();
 
-                id=item.Delete(xmlString);
+                id = item.Delete(xmlString);
 
-                if (id.Trim()!="-1")//t_Items删除成功
+                if (id.Trim() != "-1")//t_Items删除成功
                 {
                     sql = " Update t_Departments Set FIsDeleted =1 Where  FID='" + id + "' And FIsDeleted=0   Update t_Workships Set FIsDeleted =1 Where  FTeamID='" + id + "' And FIsDeleted=0";
                     SQLServerHelper runner = new SQLServerHelper();
@@ -340,13 +344,15 @@ namespace ydb.BLL
             result = id;
             return result;
         }
-        #endregion
+
+        #endregion Delete
 
         #region GetAllSubItemList
+
         //返回该部门的下一级子部门和相应的人员
         public string GetAllSubItemList(string xmlString)
         {
-            string result = "", sql = "",id="";
+            string result = "", sql = "", id = "";
             SQLServerHelper runner;
 
             try
@@ -354,8 +360,8 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("GetAllSubItemList/DeptID");
-                if (vNode == null ||vNode.InnerText.Trim().Length ==0 )
-                    throw  new  Exception("部门ID不能为空");
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                    throw new Exception("部门ID不能为空");
                 else
                 {
                     id = vNode.InnerText.Trim();
@@ -369,9 +375,6 @@ namespace ydb.BLL
                          " From t_Items t1" +
                          " Left Join t_employees t2 On t1.FID = t2.FID" +
                          " Where t1.FIsDeleted=0 And t2.FDeptID='" + id + "'";
-
-               
-     
 
                 runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
@@ -436,13 +439,15 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion GetAllSubItemList
 
         #region CreateCompany
+
         //根据注册公司信息创建组织架构的根节点（公司）
         public string CreateCompany(string xmlString)
         {
-            string result = "",  id = "",companyName="";
+            string result = "", id = "", companyName = "";
 
             try
             {
@@ -455,22 +460,22 @@ namespace ydb.BLL
                 {
                     companyName = vNode.InnerText.Trim();
                 }
-            
+
                 id = Guid.NewGuid().ToString();
                 string sql = "Insert Into t_Items(FID,FCompanyID,FName,FNumber,FLevel,FFullNumber,FIsDetail)";
-                sql = sql+ "Values('"+id+"','"+id+"','"+companyName+"','"+"A"+ DateTime.Now.ToString("yyyyMMddhhmmss")+"','1','"+"A"+ DateTime.Now.ToString("yyyyMMddhhmmss")+"',1)";
+                sql = sql + "Values('" + id + "','" + id + "','" + companyName + "','" + "A" + DateTime.Now.ToString("yyyyMMddhhmmss") + "','1','" + "A" + DateTime.Now.ToString("yyyyMMddhhmmss") + "',1)";
                 SQLServerHelper runner = new SQLServerHelper();
-                if (runner.ExecuteSqlNone(sql)>0)
+                if (runner.ExecuteSqlNone(sql) > 0)
                     result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><CreateCompany>" +
                             "<Result>True</Result>" +
                             "<Description></Description>" +
-                            "<ID>"+id+"</ID>" +
+                            "<ID>" + id + "</ID>" +
                             "</CreateCompany>";
                 else
                     result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><CreateCompany>" +
                             "<Result>False</Result>" +
                             "<Description></Description>" +
-                            "<ID>"+id+"</ID>" +
+                            "<ID>" + id + "</ID>" +
                             "</CreateCompany>";
             }
             catch (Exception err)
@@ -479,10 +484,9 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
 
+        #endregion CreateCompany
     }
-
 
     public class WorkShip
     {
@@ -491,6 +495,7 @@ namespace ydb.BLL
 
         private string memberIDs = "";
         private string deptIDs = "";
+
         #region Update
 
         public string Update(string teamID)
@@ -502,49 +507,49 @@ namespace ydb.BLL
                 runner = new SQLServerHelper();
                 sql = "Select FSupervisorID From t_Departments Where FID='" + teamID + "' and FIsDeleted=0";
                 DataTable dt = runner.ExecuteSql(sql);
-                if(dt.Rows.Count>0)
+                if (dt.Rows.Count > 0)
                 {
                     if (dt.Rows[0]["FSupervisorID"].ToString().Length > 0)
                     {
                         Update(dt.Rows[0]["FSupervisorID"].ToString(), teamID);
                     }
                 }
-
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
-        public string Update(string supervisorID,string teamID)
+
+        public string Update(string supervisorID, string teamID)
         {
-            string result = "-1",sql="";
+            string result = "-1", sql = "";
             SQLServerHelper runner;
             try
             {
                 runner = new SQLServerHelper();
-                sql = "Select FID As FEmployeeID,FTypeID,FIsAgency From t_Employees Where FDeptID='"+ teamID+"' And FIsDeleted=0";//找出所有该团队成员
+                sql = "Select FID As FEmployeeID,FTypeID,FIsAgency From t_Employees Where FDeptID='" + teamID + "' And FIsDeleted=0";//找出所有该团队成员
                 DataTable dt = runner.ExecuteSql(sql);
-                foreach(DataRow row in dt.Rows)
+                foreach (DataRow row in dt.Rows)
                 {
                     sql = "Select * from t_Workships Where FEmployeeID='" + row["FEmployeeID"].ToString() + "' and FIsDeleted=0";
                     DataTable dtWorkship = runner.ExecuteSql(sql);
-                    if(dtWorkship.Rows.Count==0)//此员工尚未建立工作关系
+                    if (dtWorkship.Rows.Count == 0)//此员工尚未建立工作关系
                     {
-                        sql = "INSERT INTO t_Workships(FTeamID,FEmployeeID,FTeamLeaderID,FBeginDate,FIsDeleted,FIsAgency)VALUES('" + teamID + "','" + row["FEmployeeID"].ToString()+
+                        sql = "INSERT INTO t_Workships(FTeamID,FEmployeeID,FTeamLeaderID,FBeginDate,FIsDeleted,FIsAgency)VALUES('" + teamID + "','" + row["FEmployeeID"].ToString() +
                                "','" + supervisorID + "','" + DateTime.Now.ToString("yyyy-MM-dd") + "',0,'" + row["FIsAgency"].ToString() + "')";
                         runner.ExecuteSqlNone(sql);
                     }
                     else//workship表有此记录
                     {
-                        foreach(DataRow wsRow in dtWorkship.Rows)
+                        foreach (DataRow wsRow in dtWorkship.Rows)
                         {
-                            if(!wsRow["FTeamLeaderID"].ToString().Trim().Equals(supervisorID))//Workship表中的主管ID不同于当前LeaderID
+                            if (!wsRow["FTeamLeaderID"].ToString().Trim().Equals(supervisorID))//Workship表中的主管ID不同于当前LeaderID
                             {
                                 sql = "Select FDeptID From t_Employees Where FID= '" + row["FEmployeeID"].ToString() + "' and FIsDeleted=0 And FDeptID !='" + teamID + "'";
                                 DataTable dt2 = runner.ExecuteSql(sql);
-                                if(dt2.Rows.Count==0)//同部门，Leader变化
+                                if (dt2.Rows.Count == 0)//同部门，Leader变化
                                 {
                                     sql = "Update t_Workships Set FIsDeleted=1,FEndDate='" + DateTime.Now.ToString("yyyy-MM-dd") + "'";
                                     sql = sql + " Where FID=" + wsRow["FID"].ToString();
@@ -561,24 +566,26 @@ namespace ydb.BLL
                     }
                 }
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
-        #endregion
+
+        #endregion Update
 
         #region GetTeamMemberIDs
+
         public string GetTeamMemberIDs(string xmlString)
         {
-            string result = "",leaderID="";
+            string result = "", leaderID = "";
             try
             {
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("GetTeamMembers/LeaderID");
-                if(vNode==null||vNode.InnerText.Trim().Length ==0)
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
                     throw new Exception("团队领导ID不能为空");
                 else
                     leaderID = vNode.InnerText.Trim();
@@ -589,29 +596,30 @@ namespace ydb.BLL
                 //sql = sql + " Where t1.FTeamLeaderID='" + leaderID + "' Order by t1.FTeamID";
 
                 string sql = @"Select t1.FID As FEmployeeID
-                                From t_Employees t1 
+                                From t_Employees t1
                                 Where t1.FDeptID In(Select Distinct FID from t_Departments where FSupervisorID='{0}')";
                 sql = string.Format(sql, leaderID);
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
-                foreach(DataRow row in dt.Rows )
+                foreach (DataRow row in dt.Rows)
                 {
                     result = result + row["FEmployeeID"].ToString() + "|";
                 }
                 result = result.Length > 0 ? result.Substring(0, result.Length - 1) : "";
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
-        #endregion
+
+        #endregion GetTeamMemberIDs
 
         #region GetTeamMemberList
+
         public string GetTeamMemberList(string xmlString)
         {
-
             string result = "", sql = "", leaderID = "";
             string colName = "";
 
@@ -631,10 +639,10 @@ namespace ydb.BLL
                 {
                     leaderID = vNode.InnerText.Trim();
                 }
-                
+
                 sql = @"Select FID From t_Departments Where FSupervisorID ='{0}' and  FIsDeleted = 0";
                 sql = string.Format(sql, leaderID);
-                
+
                 runner = new SQLServerHelper();
                 DataTable deptDt = runner.ExecuteSql(sql);
                 doc.LoadXml(result);
@@ -643,7 +651,7 @@ namespace ydb.BLL
 
                 sql = @"Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'1' As Detail,t2.FID AS LeaderID
                             From t_Items t1
-                            Left Join t_Employees t2 On t1.FID = t2.FID  
+                            Left Join t_Employees t2 On t1.FID = t2.FID
                             Where t2.FLeaderList like '%{0}%'";
                 sql = string.Format(sql, leaderID);
 
@@ -653,7 +661,7 @@ namespace ydb.BLL
                     XmlNode cNode = doc.CreateElement("DataRow");
                     pNode.AppendChild(cNode);
                     vNode = null;
-                   
+
                     foreach (DataColumn col in memberDt.Columns)
                     {
                         colName = col.Caption;
@@ -663,16 +671,16 @@ namespace ydb.BLL
                     }
                 }
 
-                foreach ( DataRow  dr in deptDt.Rows)
+                foreach (DataRow dr in deptDt.Rows)
                 {
                     sql = @"Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'1' As Detail,t2.FID AS LeaderID
                             From t_Items t1
-                            Left Join t_Employees t2 On t1.FID = t2.FID  
-                            Where t2.FDeptID In ('{0}') 
+                            Left Join t_Employees t2 On t1.FID = t2.FID
+                            Where t2.FDeptID In ('{0}')
                             Union
                             Select t1.FID As ID ,t1.FName As Name,'{0}' As PID,'0' As Detail,t2.FSupervisorID AS LeaderID
                             From t_Items t1
-                            Left Join t_Departments t2 On t1.FID = t2.FID  
+                            Left Join t_Departments t2 On t1.FID = t2.FID
                             Where t1.FParentID In ('{0}')";
 
                     sql = string.Format(sql, dr["FID"].ToString());
@@ -693,11 +701,7 @@ namespace ydb.BLL
                         }
                     }
                 }
-
-         
-
-               result = doc.OuterXml;
-                
+                result = doc.OuterXml;
             }
             catch (Exception err)
             {
@@ -705,35 +709,38 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
 
-        public  string  GetAllMemberIDsByLeaderID(string leaderID)
+        #endregion GetTeamMemberList
+
+        public string GetAllMemberIDsByLeaderID(string leaderID)
         {
-            string deptID = "",sql = "";
+            string deptID = "", sql = "";
             deptIDs = "";
             memberIDs = leaderID;
 
             sql = "Select FID from t_Departments Where FIsDeleted =0 and FSupervisorID='" + leaderID + "'";
             SQLServerHelper runner = new SQLServerHelper();
             DataTable dt = runner.ExecuteSql(sql);
-           
+
             foreach (DataRow row in dt.Rows)
             {
-                deptID = row["FID"].ToString(); 
+                deptID = row["FID"].ToString();
                 GetAllSbuDeptsByDeptID(deptID);
             }
-            if (deptIDs.Length >0)
+            if (deptIDs.Length > 0)
             {
-                deptIDs=deptIDs.Replace("|","','"); 
+                deptIDs = deptIDs.Replace("|", "','");
+
                 sql = "Select FID from t_Employees Where FIsDeleted =0 and FDeptID in ('{0}')  or  FLeaderList like '%{1}%'";
+
                 sql = string.Format(sql, deptIDs, leaderID);
             }
             else
             {
                 sql = "Select FID from t_Employees Where FIsDeleted =0 and   FLeaderList like '%{0}%'";
-                sql = string.Format(sql,  leaderID);
+                sql = string.Format(sql, leaderID);
             }
-          
+
             dt = runner.ExecuteSql(sql);
 
             foreach (DataRow row in dt.Rows)
@@ -744,10 +751,10 @@ namespace ydb.BLL
                     memberIDs = memberIDs + "|" + row["FID"].ToString();
             }
 
-            return memberIDs ;
+            return memberIDs;
         }
-        
-        private   void GetAllSbuDeptsByDeptID(string deptID)
+
+        private void GetAllSbuDeptsByDeptID(string deptID)
         {
             if (deptIDs.Length == 0)
                 deptIDs = deptID;
@@ -756,12 +763,11 @@ namespace ydb.BLL
             string sql = "Select FID from t_Items Where FIsDeleted =0 and FParentID='" + deptID + "'";
             SQLServerHelper runner = new SQLServerHelper();
             DataTable dt = runner.ExecuteSql(sql);
-            if (dt.Rows.Count >0)
+            if (dt.Rows.Count > 0)
             {
                 foreach (DataRow row in dt.Rows)
                     GetAllSbuDeptsByDeptID(row["FID"].ToString());
             }
         }
     }
-
 }
