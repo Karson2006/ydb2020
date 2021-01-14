@@ -13,13 +13,11 @@ namespace ydb.BLL
     {
         public CallData()
         {
-
         }
-
 
         public string GetMyList(string xmlString)
         {
-            string result = "", val = "", filter = "", employeeID = "",sql="";
+            string result = "", val = "", filter = "", employeeID = "", sql = "";
 
             try
             {
@@ -27,7 +25,7 @@ namespace ydb.BLL
 
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("GetMyCallList/EmployeeID");
-                if (vNode == null || vNode.InnerText.Trim().Length==0)
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
                     throw new Exception("员工ID不能为空");
                 else
                 {
@@ -38,8 +36,6 @@ namespace ydb.BLL
                         employeeID = val;
                     }
                 }
-                
-                    
 
                 vNode = doc.SelectSingleNode("GetMyCallList/BeginDate");
                 if (vNode != null)
@@ -67,17 +63,15 @@ namespace ydb.BLL
 
                 sql = "Select t1.FID,Isnull(t2.FName,'') As FInstitutionName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName," +
                       " (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As FTimeString, t1.FStartTime As FDate" +
-                      " From [CallActivity] t1"+
-                      " Left Join t_Items t2 On t1.FInstitutionID= t2.FID"+
+                      " From [CallActivity] t1" +
+                      " Left Join t_Items t2 On t1.FInstitutionID= t2.FID" +
                       " Left Join t_Items t4 On t1.FEmployeeID= t4.FID";
-               if(filter.Trim().Length >0)
+                if (filter.Trim().Length > 0)
                     sql = sql + " Where " + filter;
-               sql = sql + " Order by t1.FStartTime Desc";
+                sql = sql + " Order by t1.FStartTime Desc";
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
                 result = Common.DataTableToXml(dt, "GetMyCallList", "", "List");
-               
-
             }
             catch (Exception err)
             {
@@ -86,11 +80,9 @@ namespace ydb.BLL
             return result;
         }
 
-
         //public DataTable GetTeamList(string leaderId, DateTime beginDate, DateTime endDate, string type = "99")
         public string GetTeamList(string xmlString)
         {
-
             string result = "", employeeIDs = "", val = "", filterString = "", sql = "";
             result = "<GetTeamCallList>" +
                     "<Result>False</Result>" +
@@ -109,7 +101,7 @@ namespace ydb.BLL
                     if (vNode != null && vNode.InnerText.Trim().Length > 0)
                     {
                         val = vNode.InnerText.Trim();
-                        
+
                         WorkShip w = new WorkShip();
                         string xmlParam = "<GetTeamMembers><LeaderID>" + val + "</LeaderID></GetTeamMembers>";
                         employeeIDs = w.GetTeamMemberIDs(xmlParam);
@@ -117,7 +109,6 @@ namespace ydb.BLL
                             return result;
                         else
                             filterString = filterString.Trim().Length > 0 ? filterString + "  and t1.FEmployeeID In ('" + employeeIDs.Replace("|", "','") + "')" : "  t1.FEmployeeID In ('" + employeeIDs.Replace("|", "','") + "')";
-                        
                     }
                     else
                         throw new Exception("团队领导ID不能为空");
@@ -128,8 +119,6 @@ namespace ydb.BLL
                     if (val.Length > 0)
                         filterString = filterString.Trim().Length > 0 ? filterString + "  and t1.FEmployeeID In ('" + val.Replace("|", "','") + "')" : "  t1.FEmployeeID In ('" + val.Replace("|", "','") + "')";
                 }
-
-
 
                 vNode = doc.SelectSingleNode("GetTeamCallList/BeginDate");
                 if (vNode != null)
@@ -147,15 +136,13 @@ namespace ydb.BLL
                         filterString = filterString.Length > 0 ? filterString + " And  t1.FDate <= '" + val + "  23:59:59.999'" : " t1.FDate <= '" + val + "  23:59:59.999'";
                 }
 
-                
-
                 sql = "Select t1.*,Isnull(t2.FName,'') As InstitutionName,'' As ClientName,Isnull(t4.FName,'') As  EmployeeName," +
                       " (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~'+ Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As TimeString,t1.FStartTime As Date" +
                       " From [CallActivity] t1" +
                       " Left Join t_Items t2 On t1.FInstitutionID= t2.FID" +
                       " Left Join t_Items t4 On t1.FEmployeeID= t4.FID";
 
-                if (filterString.Length >0)
+                if (filterString.Length > 0)
                     sql = sql + " Where " + filterString;
 
                 sql = sql + " Order by t1.FStartTime Desc";
@@ -163,8 +150,6 @@ namespace ydb.BLL
                 DataTable dt = runner.ExecuteSql(sql);
 
                 result = Common.DataTableToXml(dt, "GetTeamCallList", "", "List");
-
-               
             }
             catch (Exception err)
             {
@@ -173,8 +158,8 @@ namespace ydb.BLL
             return result;
         }
 
-
         #region GetList
+
         public DataTable GetList(string xmlString)
         {
             DataTable result = new DataTable();
@@ -184,18 +169,18 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
 
-                string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName,Isnull(t4.FName,'') As FDepartmentName_Ins, " +                 
-                            " '' As FClientName,Isnull(t6.FName,'') As FProductName"+
-                            " FROM CallActivity t1"+
-                            " Left Join t_items t2 On t1.FEmployeeID=t2.FID"+
-                            " Left Join t_items t3 On t1.FInstitutionID=t3.FID"+
-                            " Left Join t_items t4 On t1.FDepartmentID_Ins=t4.FID"+
+                string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName,Isnull(t4.FName,'') As FDepartmentName_Ins, " +
+                            " '' As FClientName,Isnull(t6.FName,'') As FProductName" +
+                            " FROM CallActivity t1" +
+                            " Left Join t_items t2 On t1.FEmployeeID=t2.FID" +
+                            " Left Join t_items t3 On t1.FInstitutionID=t3.FID" +
+                            " Left Join t_items t4 On t1.FDepartmentID_Ins=t4.FID" +
                             " Left Join t_items t6 On t1.FProductID=t4.FID";
                 XmlNode vNode = doc.SelectSingleNode("GetCallList/BeginDate");
-                if(vNode!=null)
+                if (vNode != null)
                 {
                     val = vNode.InnerText;
-                    if(val.Trim().Length>0)
+                    if (val.Trim().Length > 0)
                         filter = " t1.FDate >= '" + DateTime.Parse(val).ToString("yyyy-MM-dd") + " 0:0:0.000'";
                 }
                 vNode = doc.SelectSingleNode("GetCallList/EndDate");
@@ -203,7 +188,7 @@ namespace ydb.BLL
                 {
                     val = vNode.InnerText;
                     if (val.Trim().Length > 0)
-                        filter = filter.Length>0? filter+ " and t1.FDate <= '" + DateTime.Parse(val).ToString("yyyy-MM-dd") + " 23:59:59.999'":"t1.Fate <= '" + DateTime.Parse(val).ToString("yyyy-MM-dd") + " 23:59:59.999'";
+                        filter = filter.Length > 0 ? filter + " and t1.FDate <= '" + DateTime.Parse(val).ToString("yyyy-MM-dd") + " 23:59:59.999'" : "t1.Fate <= '" + DateTime.Parse(val).ToString("yyyy-MM-dd") + " 23:59:59.999'";
                 }
                 vNode = doc.SelectSingleNode("GetCallList/InstitutioName");
                 if (vNode != null)
@@ -217,23 +202,25 @@ namespace ydb.BLL
                 {
                     val = vNode.InnerText;
                     if (val.Trim().Length > 0)
-                        filter = filter.Length > 0 ? filter + " and t1.FEmployeeID in('" +val.Replace("|","','")  + "')" :" t1.FEmployeeID in('" +val.Replace("|","','")  + "')";
+                        filter = filter.Length > 0 ? filter + " and t1.FEmployeeID in('" + val.Replace("|", "','") + "')" : " t1.FEmployeeID in('" + val.Replace("|", "','") + "')";
                 }
-                if(filter.Length>0)
-                    sql =sql+ " Where " + filter ;
+                if (filter.Length > 0)
+                    sql = sql + " Where " + filter;
                 sql = sql + " Order by t1.FStartTime Desc";
                 SQLServerHelper runner = new SQLServerHelper();
                 result = runner.ExecuteSql(sql);
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
-        #endregion
+
+        #endregion GetList
 
         #region GetListXML
+
         public string GetListXML(string xmlString)
         {
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetCallList>" +
@@ -349,22 +336,22 @@ namespace ydb.BLL
                 //}
                 //result = doc.InnerXml;
             }
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
-        #endregion
+
+        #endregion GetListXML
 
         #region GetDetail
+
         public string GetDetail(string xmlMessage)
         {
-           
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetCallDetail>" +
                             "<Result>False</Result>" +
-                            "<Description></Description>" ;
-          
+                            "<Description></Description>";
 
             string callID = "-1";
 
@@ -375,19 +362,18 @@ namespace ydb.BLL
                 throw new Exception("拜访记录ID不能为空");
             callID = vNode.InnerText.Trim();
 
-            
-            string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName,Isnull(t4.FName,'') As FDepartmentName_Ins," +                
-                        " '' As FClientName,Isnull(t6.FName,'') As FProductName"+
-                        " FROM CallActivity t1"+
-                        " Left Join t_items t2 On t1.FEmployeeID=t2.FID"+
-                        " Left Join t_items t3 On t1.FInstitutionID=t3.FID"+
-                        " Left Join t_items t4 On t1.FDepartmentID_Ins=t4.FID"+
+            string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName,Isnull(t4.FName,'') As FDepartmentName_Ins," +
+                        " '' As FClientName,Isnull(t6.FName,'') As FProductName" +
+                        " FROM CallActivity t1" +
+                        " Left Join t_items t2 On t1.FEmployeeID=t2.FID" +
+                        " Left Join t_items t3 On t1.FInstitutionID=t3.FID" +
+                        " Left Join t_items t4 On t1.FDepartmentID_Ins=t4.FID" +
                         " Left Join t_items t6 On t1.FProductID=t6.FID";
             sql = sql + " Where t1.FID='" + callID + "'";
             SQLServerHelper runner = new SQLServerHelper();
             DataTable dt = runner.ExecuteSql(sql);
             result = Common.DataTableToXml(dt, "GetCallDetail", "", "Main");
-            
+
             //加入PatientList，病人数
             doc.LoadXml(result);
             XmlNode pNode = doc.SelectSingleNode("GetCallDetail");
@@ -398,7 +384,7 @@ namespace ydb.BLL
             sql = @"Select * from CallPatients Where FCallID='{0}'";
             sql = string.Format(sql, callID);
             dt = runner.ExecuteSql(sql);
-            
+
             foreach (DataRow row in dt.Rows)
             {
                 cNode = doc.CreateElement("DataRow");
@@ -420,7 +406,6 @@ namespace ydb.BLL
                 vNode = doc.CreateElement("Total");
                 vNode.InnerText = row["FTotal"].ToString();
                 cNode.AppendChild(vNode);
-
             }
 
             pNode = doc.SelectSingleNode("GetCallDetail");
@@ -468,13 +453,13 @@ namespace ydb.BLL
                 vNode = doc.CreateElement("Improvement");
                 vNode.InnerText = row["FImprovement"].ToString();
                 cNode.AppendChild(vNode);
-
             }
-            result = doc.OuterXml ;
+            result = doc.OuterXml;
 
             return result;
         }
-        #endregion
+
+        #endregion GetDetail
 
         #region Update
 
@@ -482,16 +467,15 @@ namespace ydb.BLL
         {
             string id = "", sql = "", valueString = "", FScheduleID = "-1", FEmployeeID = "-1", val = "";
             string FRouteID = "";
-            int isNew =0;
+            int isNew = 0;
 
             SQLServerHelper runner = new SQLServerHelper();
             try
             {
-                
                 XmlDocument doc = new XmlDocument();
                 DataTable dt = new DataTable();
                 doc.LoadXml(xmlString);
-                
+
                 id = doc.SelectSingleNode("UpdateCallData/ID").InnerText;
                 if (id.Trim() == "" || id.Trim() == "-1")//新增
                 {
@@ -602,11 +586,10 @@ namespace ydb.BLL
                     val = vNode.InnerText;
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FEndTime='" + val + "',";
-                }    
+                }
                 else
                 {
-                    if (isNew == 1)  throw new Exception("拜访结束时间不能为空");
-                    
+                    if (isNew == 1) throw new Exception("拜访结束时间不能为空");
                 }
                 vNode = doc.SelectSingleNode("UpdateCallData/ProductID");
                 if (vNode != null)
@@ -640,23 +623,21 @@ namespace ydb.BLL
                 vNode = doc.SelectSingleNode("UpdateCallData/ScheduleID");
                 if (vNode != null)
                 {
-                    val = vNode.InnerText.Trim() ;
+                    val = vNode.InnerText.Trim();
                     if (val.Trim().Length > 0)
                     {
                         FScheduleID = val;
                         valueString = valueString + "FScheduleID='" + val + "',";
-                        
                     }
                 }
-                
+
                 vNode = doc.SelectSingleNode("UpdateCallData/RouteID");
                 if (vNode != null && vNode.InnerText.Trim().Length > 0)
                 {
                     val = vNode.InnerText.Trim();
-                  
+
                     FRouteID = val;
                     valueString = valueString + "FRouteID='" + val + "',";
-
                 }
 
                 vNode = doc.SelectSingleNode("UpdateCallData/Deliveries");
@@ -676,7 +657,7 @@ namespace ydb.BLL
 
                 //id = doc.SelectSingleNode("UpdateCallData/ID").InnerText;
                 //if (id.Trim() == "" || id.Trim() == "-1")//新增
-                if(isNew ==1)
+                if (isNew == 1)
                 {
                     if (FScheduleID.Trim() != "4484030a-28d1-4e5e-ba72-6655f1cb2898")
                     {
@@ -686,7 +667,7 @@ namespace ydb.BLL
                             throw new Exception("该日程已完成拜访，不能再选择");
                     }
 
-                    if (FRouteID.Trim().Length >0)
+                    if (FRouteID.Trim().Length > 0)
                     {
                         sql = "Select FID From CallActivity Where FRouteID='" + FRouteID + "'";
                         dt = runner.ExecuteSql(sql);
@@ -708,11 +689,10 @@ namespace ydb.BLL
                 {
                     val = vNode.InnerText.Trim();
                     valueString = valueString + "FComment='" + val + "',";
-
                 }
                 //拜访类型
                 vNode = doc.SelectSingleNode("UpdateCallData/Type");
-                if (vNode != null && vNode.InnerText.Trim().Length > 0 )
+                if (vNode != null && vNode.InnerText.Trim().Length > 0)
                 {
                     val = vNode.InnerText;
                     if (val.Trim().Length > 0)
@@ -723,13 +703,13 @@ namespace ydb.BLL
                 if (vNode != null && vNode.InnerText.Trim().Length > 0)
                 {
                     string[] types = doc.SelectSingleNode("UpdateCallData/PatientList/Type").InnerText.Trim().Split(new[] { '|' });
-                    string[] oldpatients = doc.SelectSingleNode("UpdateCallData/PatientList/OldPatient").InnerText.Trim().Split(new[] {'|'});
+                    string[] oldpatients = doc.SelectSingleNode("UpdateCallData/PatientList/OldPatient").InnerText.Trim().Split(new[] { '|' });
                     string[] newpatients = doc.SelectSingleNode("UpdateCallData/PatientList/NewPatient").InnerText.Trim().Split(new[] { '|' });
                     //删除已存在的
                     sql = "Delete from CallPatients Where FCallID ='{0}'";
                     sql = string.Format(sql, id);
                     runner.ExecuteSqlNone(sql);
-                    for (int i = 0; i < types.Length;i++ )
+                    for (int i = 0; i < types.Length; i++)
                     {
                         int iold = 0, inew = 0, itotal = 0;
                         if (oldpatients[i].Trim().Length > 0)
@@ -741,7 +721,7 @@ namespace ydb.BLL
                         {
                             sql = @"Insert Into CallPatients( FCallID,FPatientType,FOldPatientCount,FNewPatientCount,FTotal)
                                 Values('{0}','{1}',{2},{3},{4})";
-                            sql = string.Format(sql, id, types[i], iold, inew, itotal );
+                            sql = string.Format(sql, id, types[i], iold, inew, itotal);
                             runner.ExecuteSqlNone(sql);
                         }
                     }
@@ -751,7 +731,6 @@ namespace ydb.BLL
                 vNode = doc.SelectSingleNode("UpdateCallData/CallList");
                 if (vNode != null && vNode.InnerText.Trim().Length > 0)
                 {
-
                     string[] deptids = doc.SelectSingleNode("UpdateCallData/CallList/DeptID").InnerText.Trim().Split(new[] { '|' });
                     string[] clientids = doc.SelectSingleNode("UpdateCallData/CallList/ClientID").InnerText.Trim().Split(new[] { '|' });
                     string[] aims = doc.SelectSingleNode("UpdateCallData/CallList/Aims").InnerText.Trim().Split(new[] { '|' });
@@ -761,11 +740,13 @@ namespace ydb.BLL
                     sql = "Delete from CallDetail Where FCallID ='{0}'";
                     sql = string.Format(sql, id);
                     runner.ExecuteSqlNone(sql);
+                    int year, weekOfyear;
                     for (int i = 0; i < deptids.Length; i++)
                     {
+                        Common.GetWeekIndexOfYear("0", out year, out weekOfyear);
                         sql = @"Insert Into CallDetail( FCallID,FDeptID,FClientID,FAims,FResult,FImprovement)
-                                Values('{0}','{1}','{2}','{3}','{4}','{5}')";
-                        sql = string.Format(sql,id, deptids[i], clientids[i], aims[i], results[i],improvements[i] );
+                                Values('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}')";
+                        sql = string.Format(sql, id, deptids[i], clientids[i], aims[i], results[i], improvements[i]);
                         runner.ExecuteSqlNone(sql);
                     }
                 }
@@ -777,18 +758,19 @@ namespace ydb.BLL
 
                     if (FScheduleID != "4484030a-28d1-4e5e-ba72-6655f1cb2898")//计划内拜访，更新日程的是否执行信息
                     {
-                        sql = sql +" Update ScheduleExecutor Set FIsExcuted =1 Where FScheduleID='"+FScheduleID+"' and FExcutorID='"+FEmployeeID+"'";
+                        sql = sql + " Update ScheduleExecutor Set FIsExcuted =1 Where FScheduleID='" + FScheduleID + "' and FExcutorID='" + FEmployeeID + "'";
                     }
 
                     runner.ExecuteSqlNone(sql).ToString();
-                    
+                    int year, weekOfyear;
+                    Common.GetWeekIndexOfYear("0", out year, out weekOfyear);
+                    sql = $"Update CallActivity Set FWeek='{weekOfyear}',FMonth='{DateTime.Now.Month}' Where FID='" + id + "'";
+                    runner.ExecuteSqlNone(sql);
                 }
-
             }
-            catch(Exception err)
+            catch (Exception err)
             {
-
-                if(isNew==2)//新增异常，删除相关已插入的数据
+                if (isNew == 2)//新增异常，删除相关已插入的数据
                 {
                     sql = "Delete from CallActivity where FID='" + id + "'";
                     runner.ExecuteSqlNone(sql);
@@ -800,12 +782,14 @@ namespace ydb.BLL
                 id = "-1";
                 throw err;
             }
-           
+
             return id;
         }
-        #endregion
+
+        #endregion Update
 
         #region Delete
+
         public string Delete(string xmlMessage)
         {
             string result = "-1", callID = "";
@@ -831,8 +815,7 @@ namespace ydb.BLL
                 result = "-1";
             return result;
         }
-        #endregion
-        
 
+        #endregion Delete
     }
 }
