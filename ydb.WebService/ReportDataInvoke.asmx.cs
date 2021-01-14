@@ -287,5 +287,41 @@ namespace ydb.WebService
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
         }
+
+        #region 多级
+
+        [WebMethod]
+        public string GetMultiCallReport(string xmlMessage)
+        {
+            string result = @"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":"""",""DataRows"":"""" }} }}"; ;
+            string logID = Guid.NewGuid().ToString();
+            try
+            {
+                FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", "GetCallRepotr2");
+
+                if (Helper.CheckAuthCode("GetData", xmlMessage))
+                {
+                    CallRpt rpt = new CallRpt();
+                    result = rpt.GetMultiCallReport(xmlMessage);
+                }
+            }
+            catch (Exception err)
+            {
+                result = $@"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":""{ err.Message}"",""DataRows"":"""" }} }}"; ;
+            }
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", "GetMultiReport");
+            return result;
+        }
+
+        [WebMethod]
+        public string GetMultiReportJson(string JsonMessage)
+        {
+            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetData");
+            string result = GetMultiCallReport(xmlString);
+            result = iTR.Lib.Common.XML2Json(result, "GetData");
+            return result;
+        }
+
+        #endregion 多级
     }
 }
