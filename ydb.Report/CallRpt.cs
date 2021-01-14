@@ -278,7 +278,19 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
-            string result = "", startdate = "", enddate = "", employeeId = "", weekIndex = "", typeid = "", superid = "", viewtype = "", itemtype = "", viewweek = "", viewmonth = "";
+            string result = "",
+                startdate = "",
+                enddate = "",
+                employeeId = "",
+                weekIndex = "",
+                typeid = "",
+                superid = "",
+                viewtype = "",
+                itemtype = "",
+                viewweek = "",
+                viewmonth = "",
+                id = "";
+            int querytype = -1;
             result = @"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":"""",""dataRow"":"""" }} }}";
             XmlDocument doc = new XmlDocument();
             try
@@ -313,13 +325,24 @@ namespace ydb.Report
                 {
                     viewmonth = node.InnerText.Trim();
                 }
-                Tuple<DateTime, DateTime> tupletPerTime = Common.GetPerTime(weekIndex);
+                //获取查询类型部门或人
+                node = doc.SelectSingleNode("GetData/querytype");
+                if (node != null && node.InnerText.Trim().Length > 0)
+                {
+                    querytype = int.Parse(node.InnerText.Trim());
+                }
+                node = doc.SelectSingleNode("GetData/id");
+                if (node != null && node.InnerText.Trim().Length > 0)
+                {
+                    id = node.InnerText.Trim();
+                }
+                // Tuple<DateTime, DateTime> tupletPerTime = Common.GetPerTime(weekIndex);
                 int year = DateTime.Now.Year;
                 //拼接的sql语句
                 List<string> showdataList = new List<string>();
                 //列名
                 List<string> columnname = new List<string>();
-
+                List<string> weektimeList = new List<string>();
                 //月-周
                 if (viewtype == "0")
                 {
@@ -330,6 +353,8 @@ namespace ydb.Report
                         if (!string.IsNullOrEmpty(item))
                         {
                             columnname.Add(year + item);
+                            Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(item));
+                            weektimeList.Add("\"" + $"{item}|{monsunTuple.Item1.ToString("yyyy-MM-dd")}-{monsunTuple.Item2.ToString("yyyy-MM-dd")}" + "\"");
                             showdataList.Add($"Sum(Case FWeek When '{year + item}' Then 1 Else 0 End) AS '{year + item}'");
                         }
                     }
@@ -338,36 +363,44 @@ namespace ydb.Report
                 else if (viewtype == "1")
                 {
                     Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(viewweek));
-                    for (int i = 0; i < 8; i++)
+                    for (int i = 0; i < 7; i++)
                     {
                         columnname.Add(monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd"));
+                        weektimeList.Add("\"" + monsunTuple.Item1.AddDays(i).ToString("yyyy-MM-dd") + "\"");
                         showdataList.Add($"Sum(Case  CONVERT(varchar(100), FDate, 112) When '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}' Then 1 Else 0 End) AS '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}'");
                     }
                 }
-
-                startdate = tupletPerTime.Item1.ToString();
-                enddate = tupletPerTime.Item2.ToString();
+                //天-医院 点击天列出医院
+                else
+                {
+                    return GetHospital(employeeId, "", "");
+                }
+                //startdate = tupletPerTime.Item1.ToString();
+                //enddate = tupletPerTime.Item2.ToString();
                 if (employeeId.Length == 0)
                 {
-                    node = doc.SelectSingleNode("GetData/EmployeeID");
+                    node = doc.SelectSingleNode("GetData/employeeID");
                     if (node != null && node.InnerText.Trim().Length > 0)
                     {
                         employeeId = node.InnerText.Trim();
                     }
                 }
-
                 string sql = "", allId = "";
-                WorkShip workShip = new WorkShip();
-                sql = $"select FDeptID from  yaodaibao.dbo.t_Employees WHERE FID ='{employeeId}'";
                 SQLServerHelper runner = new SQLServerHelper();
-                DataTable dt = runner.ExecuteSql(sql);
+                DataTable dt = new DataTable();
+                WorkShip workShip = new WorkShip();
+                //部门获取superID 修改 查询id
+                if (querytype == 0)
+                {
+                    sql = $"SELECT [FSupervisorID] FROM [yaodaibao].[dbo].[t_Departments] where FID = '{id}'";
+                    runner = new SQLServerHelper();
+                    dt = runner.ExecuteSql(sql);
+                    employeeId = dt.Rows[0]["FSupervisorID"].ToString();
+                }
+                sql = $"select FDeptID from  yaodaibao.dbo.t_Employees WHERE FID ='{employeeId}'";
+                dt = runner.ExecuteSql(sql);
                 //获取直属下属部门的ID 如果是管理人员
                 Tuple<bool, DataTable> tupledata = GetAllSubDepId(employeeId, dt.Rows[0]["FDeptID"].ToString());
-                if (false)//todo;superid的判断是否显示医院
-                {
-                    return GetHospital(employeeId, tupletPerTime.Item1.ToString(), tupletPerTime.Item2.ToString());
-                }
-
                 if (typeid == "0")
                 {
                     //展开型 获取所有下属ID
@@ -392,12 +425,6 @@ namespace ydb.Report
                     DataTable tempTable = new DataTable();
                     List<string> subList = new List<string>();
                     string subids = "", subdata = "";
-                    //保存单个数据的
-                    List<string> timesList = new List<string>();
-                    //保存行的
-                    List<string> rowList = new List<string>();
-                    //部门或者人的标记
-                    int querytype;
                     //统计型 遍历部门和人
                     if (tupledata.Item2.Rows.Count > 0)
                     {
@@ -423,29 +450,34 @@ namespace ydb.Report
                             if (viewtype == "0")
                             {
                                 //根据周分组
-                                sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FEmployeeID In('{subids}') Group by FType,FWeek ";
+                                sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FEmployeeID In('{subids}') Group by FType ";
                             }
+                            //这一周的拜访医院
                             else
                             {
                                 //根据天分组
-                                sql = $" Select FType,  {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FEmployeeID In('{subids}') Group by FType,FDate ";
+                                sql = $" Select FType,  {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FEmployeeID In('{subids}') Group by FType ";
                             }
                             runner = new SQLServerHelper();
                             //统计晨访，夜访....
                             tempTable = runner.ExecuteSql(sql);
+                            //保存行的
+                            List<string> rowList = new List<string>();
                             //给定格式
                             foreach (DataRow row in tempTable.Rows)
                             {
+                                //保存单个数据的
+                                List<string> timesList = new List<string>();
                                 for (int i = 0; i < tempTable.Columns.Count; i++)
                                 {
-                                    timesList.Add(row[0].ToString());
+                                    timesList.Add("\"" + row[i].ToString() + "\"");
                                 }
                                 rowList.Add("[" + string.Join(",", timesList.ToArray()) + "]");
                             }
-                            subList.Add($@"{{""name"":{item["FName"]},""id"":{item["FSupervisorID"]},""querytype"";""{ querytype}"", ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                            subList.Add($@"{{""name"":{item["FName"]},""id"":{item["FID"].ToString().Replace("E", "")},""querytype"":""{ querytype}"",""tableHead"":[{string.Join(",", weektimeList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                         }
                     }
-                    result = $@"{{""GetMultiCallReport"":{{ ""result"":""true"",""Description"":"""",""dataRow"":""{subdata}"" }} }}";
+                    result = $@"{{""GetMultiCallReport"":{{ ""result"":""true"",""Description"":"""",""dataRow"":[{string.Join(",", subList.ToArray())}] }} }}";
                 }
             }
             catch (Exception e)
@@ -453,6 +485,29 @@ namespace ydb.Report
                 result = $@"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":""{ e.Message}"",""dataRow"":"""" }} }}";
             }
             return result;
+        }
+
+        //列出拜访记录
+        public string VisitRecord(string startDate, string endDate)
+        {
+            try
+            {
+                string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString," +
+                             " t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName" +
+                             " FROM ScheduleExecutor t1" +
+                             " Left Join Schedule t2 On t1.FScheduleID= t2.FID" +
+                             " Left Join t_Items t3 On t1.FExcutorID= t3.FID" +
+                             $" Left Join t_Items t4 On t4.FID= t2.FInstitutionID where FStartTime between '{startDate}'    and   DATEADD(year, 1, '{endDate}')  order by t2.FStartTime Desc";
+                SQLServerHelper runHelper = new SQLServerHelper();
+                runHelper.ExecuteSql(sql);
+                DataTable dt = new DataTable();
+                string result = Common.DataTableToXml(dt, "GetMyScheduleList", "", "List");
+                return result;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
 
         //获取人员的医院列表
@@ -497,16 +552,17 @@ namespace ydb.Report
                 if (dt.Rows.Count > 0)
                 {
                     manager = true;
-                    sql = "Select FID from t_Items Where FIsDeleted =0 and FParentID='" + deptID + "'";
+                    sql = "Select ti.FID ,ti.FName from t_Departments td   LEFT JOIN t_Items ti ON ti.FID = td.FID  Where td.FIsDeleted =0 and FParentID='" + deptID + "'";
                     runner = new SQLServerHelper();
                     dt = runner.ExecuteSql(sql);
-                    sql = $"Select 'E'+ FID from  Where FIsDeleted =0 and   FLeaderList like '%{leaderID}%'";
+                    sql = $"Select 'E'+ ti.FID FID,ti.FName from t_Employees te   LEFT JOIN t_Items ti ON ti.FID = te.FID    Where te.FIsDeleted =0  and FDeptID in ('{deptID}') or FLeaderList like '%{leaderID}%'";
                     empdt = runner.ExecuteSql(sql);
+                    //合并部门结果和直属人员结果
                     dt.Merge(empdt, false, MissingSchemaAction.Ignore);
                 }
                 else
                 {
-                    sql = $"Select 'E'+ FID from t_Employees  Where FIsDeleted =0 and FID ={leaderID} ";
+                    sql = $"Select 'E'+ ti.FID FID,ti.FName from t_Employees te   LEFT JOIN t_Items ti ON ti.FID = te.FID   Where te.FIsDeleted =0 and FID ={leaderID} ";
                     dt = runner.ExecuteSql(sql);
                 }
                 return new Tuple<bool, DataTable>(manager, dt);
@@ -551,12 +607,12 @@ namespace ydb.Report
         public Tuple<DateTime, DateTime> GetMonSunTime(int year, int week)
         {
             //todo;这一周的具体的每天的时间
-            DateTime yearTime = Convert.ToDateTime(year + "0101");
+            DateTime yearTime = Convert.ToDateTime(year + "-01-01");
             DateTime sunTime, monTime;
             monTime = Common.GetWeekFirstDayMon(yearTime);
             sunTime = Common.GetWeekLastDaySun(yearTime);
-            monTime = yearTime.AddDays(-(week - 1) * 7);
-            sunTime = yearTime.AddDays((week - 1) * 7);
+            monTime = monTime.AddDays((week - 1) * 7);
+            sunTime = sunTime.AddDays((week - 1) * 7);
             return new Tuple<DateTime, DateTime>(monTime, sunTime);
         }
     }
