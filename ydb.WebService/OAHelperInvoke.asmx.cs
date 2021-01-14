@@ -19,22 +19,6 @@ namespace ydb.WebService
     // [System.Web.Script.Services.ScriptService]
     public class OAHelperInvoke : System.Web.Services.WebService
     {
-        [WebMethod]
-        public string AutoCheck(string JsonMassage)
-        {
-            GetFinalResult(JsonMassage, "AutoCheck");
-            //InvoiceCheck.Check();
-            return "Hello World";
-        }
-
-        [WebMethod]
-        public string ManualCheck(string JsonMessage)
-        {
-            GetFinalResult(JsonMessage, "ManualCheck");
-            //InvoiceCheck.ManualCheck();
-            return "Hello World";
-        }
-
         //OA表单统一入口
         public string GetFinalResult(string JsonMessage, string callType)
         {
