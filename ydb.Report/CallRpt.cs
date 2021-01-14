@@ -289,8 +289,9 @@ namespace ydb.Report
                 itemtype = "",
                 viewweek = "",
                 viewmonth = "",
+
                 id = "";
-            int querytype = -1;
+            int querytype = -1, year;
             result = @"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":"""",""dataRow"":"""" }} }}";
             XmlDocument doc = new XmlDocument();
             try
@@ -337,15 +338,37 @@ namespace ydb.Report
                     id = node.InnerText.Trim();
                 }
                 // Tuple<DateTime, DateTime> tupletPerTime = Common.GetPerTime(weekIndex);
-                int year = DateTime.Now.Year;
                 //拼接的sql语句
                 List<string> showdataList = new List<string>();
                 //列名
                 List<string> columnname = new List<string>();
-                List<string> weektimeList = new List<string>();
+                List<string> timeList = new List<string>();
+
+                string sql = "", allId = "", startDate = "", endDate = "";
+                SQLServerHelper runner = new SQLServerHelper();
+                DataTable dt = new DataTable();
+                WorkShip workShip = new WorkShip();
+                if (viewmonth.Contains('|'))
+                {
+                    year = int.Parse(viewmonth.Split('|')[0]);
+                }
+                else
+                {
+                    year = int.Parse(viewweek.Split('|')[0]);
+                }
+                //部门获取superID 修改 查询id
+                if (querytype == 0)
+                {
+                    sql = $"SELECT [FSupervisorID] FROM [yaodaibao].[dbo].[t_Departments] where FID = '{id}'";
+                    runner = new SQLServerHelper();
+                    dt = runner.ExecuteSql(sql);
+                    employeeId = dt.Rows[0]["FSupervisorID"].ToString();
+                }
                 //月-周
                 if (viewtype == "0")
                 {
+                    startDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
+                    endDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[1];
                     //获取月的所有周次序
                     string monthWeeks = Common.GetMonthsWeek(year, int.Parse(viewmonth));
                     foreach (string item in monthWeeks.Split('|'))
@@ -354,26 +377,29 @@ namespace ydb.Report
                         {
                             columnname.Add(year + item);
                             Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(item));
-                            weektimeList.Add("\"" + $"{item}|{monsunTuple.Item1.ToString("yyyy-MM-dd")}-{monsunTuple.Item2.ToString("yyyy-MM-dd")}" + "\"");
+                            timeList.Add("\"" + $"{item}" + "\"");
                             showdataList.Add($"Sum(Case FWeek When '{year + item}' Then 1 Else 0 End) AS '{year + item}'");
                         }
                     }
                 }
                 //天-次，一周七天固定列数
-                else if (viewtype == "1")
-                {
-                    Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(viewweek));
-                    for (int i = 0; i < 7; i++)
-                    {
-                        columnname.Add(monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd"));
-                        weektimeList.Add("\"" + monsunTuple.Item1.AddDays(i).ToString("yyyy-MM-dd") + "\"");
-                        showdataList.Add($"Sum(Case  CONVERT(varchar(100), FDate, 112) When '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}' Then 1 Else 0 End) AS '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}'");
-                    }
-                }
-                //天-医院 点击天列出医院
                 else
                 {
-                    return GetHospital(employeeId, "", "");
+                    result = GetAlllVisitRecord(employeeId, startDate, endDate);
+                    return result;
+                    //Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(viewweek));
+                    //for (int i = 0; i < 7; i++)
+                    //{
+                    //    columnname.Add(monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd"));
+                    //    weektimeList.Add("\"" + monsunTuple.Item1.AddDays(i).ToString("yyyy-MM-dd") + "\"");
+                    //    showdataList.Add($"Sum(Case  CONVERT(varchar(100), FDate, 112) When '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}' Then 1 Else 0 End) AS '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}'");
+                    //}
+                }
+                //下载所有的 直接返回結果
+                if (typeid == "0")
+                {
+                    result = DownloadAllReportDate(employeeId, startDate, endDate);
+                    return result;
                 }
                 //startdate = tupletPerTime.Item1.ToString();
                 //enddate = tupletPerTime.Item2.ToString();
@@ -385,100 +411,68 @@ namespace ydb.Report
                         employeeId = node.InnerText.Trim();
                     }
                 }
-                string sql = "", allId = "";
-                SQLServerHelper runner = new SQLServerHelper();
-                DataTable dt = new DataTable();
-                WorkShip workShip = new WorkShip();
-                //部门获取superID 修改 查询id
-                if (querytype == 0)
-                {
-                    sql = $"SELECT [FSupervisorID] FROM [yaodaibao].[dbo].[t_Departments] where FID = '{id}'";
-                    runner = new SQLServerHelper();
-                    dt = runner.ExecuteSql(sql);
-                    employeeId = dt.Rows[0]["FSupervisorID"].ToString();
-                }
+
                 sql = $"select FDeptID from  yaodaibao.dbo.t_Employees WHERE FID ='{employeeId}'";
                 dt = runner.ExecuteSql(sql);
                 //获取直属下属部门的ID 如果是管理人员
                 Tuple<bool, DataTable> tupledata = GetAllSubDepId(employeeId, dt.Rows[0]["FDeptID"].ToString());
-                if (typeid == "0")
+                Dictionary<string, string> dicsubs = new Dictionary<string, string>();
+                DataTable tempTable = new DataTable();
+                List<string> subList = new List<string>();
+                string subids = "", subdata = "";
+                //统计型 遍历部门和人
+                if (tupledata.Item2.Rows.Count > 0)
                 {
-                    //展开型 获取所有下属ID
-                    allId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
-                    sql = @"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName ,
-                                sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,
-                                Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan
-                                From CallActivity t1
-                                Left Join t_Items t2 On t1.FInstitutionID = t2.FID
-                                Left Join t_Items t3 On t1.FEmployeeID = t3.FID
-                                Where FDate between '{0}' and  '{1}' and FEmployeeID In('{2}')
-                                Group by t3.FName,t2.FName,t1.FEmployeeID
-                                Order by CallCount Desc,TimeSpan Desc";
-                    sql = string.Format(sql, startdate, enddate, allId);
-                    runner = new SQLServerHelper();
-                    dt = runner.ExecuteSql(sql);
-                    result = Common.DataTableToXml(dt, "GetData", "", "List");
-                }
-                else
-                {
-                    Dictionary<string, string> dicsubs = new Dictionary<string, string>();
-                    DataTable tempTable = new DataTable();
-                    List<string> subList = new List<string>();
-                    string subids = "", subdata = "";
-                    //统计型 遍历部门和人
-                    if (tupledata.Item2.Rows.Count > 0)
+                    foreach (DataRow item in tupledata.Item2.Rows)
                     {
-                        foreach (DataRow item in tupledata.Item2.Rows)
+                        if (!item["FID"].ToString().Contains("E"))
                         {
-                            if (!item["FID"].ToString().Contains("E"))
-                            {
-                                querytype = 0;
-                                //根据depid获取管理人员employeeId
-                                sql =
-                                    "SELECT ti.FName,td.FSupervisorID  FROM yaodaibao.dbo.t_Departments td LEFT JOIN t_Items ti ON td.FID = ti.FID Where FIsDeleted =0 and FID='" +
-                                    item["FID"] + "'";
-                                runner = new SQLServerHelper();
-                                dt = runner.ExecuteSql(sql);
-                                //根据部门管理者ID获取当前部门和子部门所有的成员ID
-                                subids = workShip.GetAllMemberIDsByLeaderID(dt.Rows[0]["FSupervisorID"].ToString());
-                            }
-                            else
-                            {
-                                querytype = 1;
-                                subids = item["FID"].ToString().Replace("E", "");
-                            }
-                            if (viewtype == "0")
-                            {
-                                //根据周分组
-                                sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FEmployeeID In('{subids}') Group by FType ";
-                            }
-                            //这一周的拜访医院
-                            else
-                            {
-                                //根据天分组
-                                sql = $" Select FType,  {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FEmployeeID In('{subids}') Group by FType ";
-                            }
+                            querytype = 0;
+                            //根据depid获取管理人员employeeId
+                            sql =
+                                "SELECT ti.FName,td.FSupervisorID  FROM yaodaibao.dbo.t_Departments td LEFT JOIN t_Items ti ON td.FID = ti.FID Where FIsDeleted =0 and FID='" +
+                                item["FID"] + "'";
                             runner = new SQLServerHelper();
-                            //统计晨访，夜访....
-                            tempTable = runner.ExecuteSql(sql);
-                            //保存行的
-                            List<string> rowList = new List<string>();
-                            //给定格式
-                            foreach (DataRow row in tempTable.Rows)
-                            {
-                                //保存单个数据的
-                                List<string> timesList = new List<string>();
-                                for (int i = 0; i < tempTable.Columns.Count; i++)
-                                {
-                                    timesList.Add("\"" + row[i].ToString() + "\"");
-                                }
-                                rowList.Add("[" + string.Join(",", timesList.ToArray()) + "]");
-                            }
-                            subList.Add($@"{{""name"":{item["FName"]},""id"":{item["FID"].ToString().Replace("E", "")},""querytype"":""{ querytype}"",""tableHead"":[{string.Join(",", weektimeList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                            dt = runner.ExecuteSql(sql);
+                            //根据部门管理者ID获取当前部门和子部门所有的成员ID
+                            subids = workShip.GetAllMemberIDsByLeaderID(dt.Rows[0]["FSupervisorID"].ToString());
                         }
+                        else
+                        {
+                            querytype = 1;
+                            subids = item["FID"].ToString().Replace("E", "");
+                        }
+                        if (viewtype == "0")
+                        {
+                            //根据周分组
+                            sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join(",", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
+                        }
+                        //这一周的拜访医院
+                        else
+                        {
+                            //根据天分组
+                            sql = $" Select FType,  {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join(",", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
+                        }
+                        runner = new SQLServerHelper();
+                        //统计晨访，夜访....
+                        tempTable = runner.ExecuteSql(sql);
+                        //保存行的
+                        List<string> rowList = new List<string>();
+                        //给定格式
+                        foreach (DataRow row in tempTable.Rows)
+                        {
+                            //保存单个数据的
+                            List<string> timesList = new List<string>();
+                            for (int i = 0; i < tempTable.Columns.Count; i++)
+                            {
+                                timesList.Add("\"" + row[i].ToString() + "\"");
+                            }
+                            rowList.Add("[" + string.Join(",", timesList.ToArray()) + "]");
+                        }
+                        subList.Add($@"{{""name"":{item["FName"]},""id"":{item["FID"].ToString().Replace("E", "")},""querytype"":""{ querytype}"",""tableHead"":[{string.Join(",", timeList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                     }
-                    result = $@"{{""GetMultiCallReport"":{{ ""result"":""true"",""Description"":"""",""dataRow"":[{string.Join(",", subList.ToArray())}] }} }}";
                 }
+                result = $@"{{""GetMultiCallReport"":{{ ""result"":""true"",""Description"":"""",""dataRow"":[{string.Join(",", subList.ToArray())}] }} }}";
             }
             catch (Exception e)
             {
@@ -487,17 +481,12 @@ namespace ydb.Report
             return result;
         }
 
-        //列出拜访记录
-        public string VisitRecord(string startDate, string endDate)
+        //列出人员的拜访医院列表
+        public string GetAlllVisitRecord(string employeeId, string startDate, string endDate)
         {
             try
             {
-                string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString," +
-                             " t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName" +
-                             " FROM ScheduleExecutor t1" +
-                             " Left Join Schedule t2 On t1.FScheduleID= t2.FID" +
-                             " Left Join t_Items t3 On t1.FExcutorID= t3.FID" +
-                             $" Left Join t_Items t4 On t4.FID= t2.FInstitutionID where FStartTime between '{startDate}'    and   DATEADD(year, 1, '{endDate}')  order by t2.FStartTime Desc";
+                string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString,t2.FEmployeeID as employeeId,  t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName  FROM ScheduleExecutor t1  Left Join Schedule t2 On t1.FScheduleID= t2.FID  Left Join t_Items t3 On t1.FExcutorID= t3.FID  Left Join t_Items t4 On t4.FID= t2.FInstitutionID where   t2.FEmployeeID = '{employeeId}' and FStartTime between '{startDate}'   and   DATEADD(year, 1, '{endDate}') and  order by t2.FStartTime Desc";
                 SQLServerHelper runHelper = new SQLServerHelper();
                 runHelper.ExecuteSql(sql);
                 DataTable dt = new DataTable();
@@ -510,28 +499,28 @@ namespace ydb.Report
             }
         }
 
-        //获取人员的医院列表
-        private string GetHospital(string employeeId, string startdate, string endstart)
-        {
-            try
-            {
-                string sql = $"SELECT t_Items.FName,sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,Sum(1) AS CallCount, FROM yaodaibao.dbo.CallActivity LEFT JOIN t_items ON CallActivity.FInstitutionID = t_Items.FID WHERE FEmployeeID ='{employeeId}' and FDate between '{startdate}' and  '{endstart}' Group by FName ,FEmployeeID";
-                SQLServerHelper serverHelper = new SQLServerHelper();
-                DataTable dt = serverHelper.ExecuteSql(sql);
-                Dictionary<string, string> dichops = new Dictionary<string, string>();
-                foreach (DataRow iteRow in dt.Rows)
-                {
-                    dichops.Add(iteRow["FName"].ToString(), iteRow[""].ToString());
-                }
-                string hosdata = JsonConvert.SerializeObject(dichops);
-                string result = $@"{{""GetMultiCallReport"":{{ ""result"":""true"",""Description"":"""",""DataRows"":""{ hosdata}"" }} }}";
-                return result;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-        }
+        ////获取人员的医院列表
+        //private string GetHospital(string employeeId, string startdate, string endstart)
+        //{
+        //    try
+        //    {
+        //        string sql = $"SELECT t_Items.FName,sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,Sum(1) AS CallCount, FROM yaodaibao.dbo.CallActivity LEFT JOIN t_items ON CallActivity.FInstitutionID = t_Items.FID WHERE FEmployeeID ='{employeeId}' and FDate between '{startdate}' and  '{endstart}' Group by FName ,FEmployeeID";
+        //        SQLServerHelper serverHelper = new SQLServerHelper();
+        //        DataTable dt = serverHelper.ExecuteSql(sql);
+        //        Dictionary<string, string> dichops = new Dictionary<string, string>();
+        //        foreach (DataRow iteRow in dt.Rows)
+        //        {
+        //            dichops.Add(iteRow["FName"].ToString(), iteRow[""].ToString());
+        //        }
+        //        string hosdata = JsonConvert.SerializeObject(dichops);
+        //        string result = $@"{{""GetMultiCallReport"":{{ ""result"":""true"",""Description"":"""",""DataRows"":""{ hosdata}"" }} }}";
+        //        return result;
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        throw e;
+        //    }
+        //}
 
         /// <summary>
         /// 根据employeeid 判断是否有权限查看其它人数据
@@ -573,40 +562,39 @@ namespace ydb.Report
             }
         }
 
-        ///// <summary>
-        ///// 获取所有下属部门ID包含子级
-        ///// </summary>
-        ///// <param name="depId"></param>
-        //public void GetTreeData(string depId)
-        //{
-        //    string sql = "Select FID from t_Items Where FIsDeleted =0 and FParentID='" + depId + "'";
-        //    SQLServerHelper runner = new SQLServerHelper();
-        //    DataTable dt = runner.ExecuteSql(sql);
-        //    if (dt.Rows.Count > 0)
-        //    {
-        //        foreach (DataRow row in dt.Rows)
-        //            GetTreeData(row["FID"].ToString());
-        //    }
-        //}
+        /// <summary>
+        /// 读取指定人员某时段的拜访汇总报表数据,如果是部门管理，获取所有人的employeeID包含子部门
+        /// </summary>
+        /// <param name="employeeId">人员ID</param>
+        /// <returns></returns>
+        public string DownloadAllReportDate(string employeeId, string startDate, string endDate)
+        {
+            string result = "", sql = "", date1 = "", date2 = "", employeeIds = "";
+            result = "<GetData>" +
+                    "<Result>False</Result>" +
+                    "<Description></Description>" +
+                    "<DataRows></DataRows>" +
+                    "</GetData>";
+            WorkShip workShip = new WorkShip();
+            employeeIds = workShip.GetAllMemberIDsByLeaderID(employeeId);
 
-        //public string GetUnderling(string leaderID)
-        //{
-        //    SQLServerHelper runner = new SQLServerHelper();
-        //    string sql = $"Select FID from t_Employees Where FIsDeleted =0 and   FLeaderList like '%{leaderID}%'";
-        //    DataTable dt = runner.ExecuteSql(sql);
-        //    List<string> idList = new List<string>();
-        //    foreach (DataRow row in dt.Rows)
-        //    {
-        //        idList.Add(row["FID"].ToString());
-        //    }
-        //    return string.Join(",", idList.ToArray());
-        //}
+            sql = $"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName , sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,  Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan  From CallActivity t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID  Left Join t_Items t3 On t1.FEmployeeID = t3.FID   Where FDate between '{startDate}' and  '{endDate}' and FEmployeeID In('{employeeIds}') Group by t3.FName,t2.FName,t1.FEmployeeID  Order by CallCount Desc,TimeSpan Desc";
+            SQLServerHelper runner = new SQLServerHelper();
+            DataTable dt = runner.ExecuteSql(sql);
+            result = Common.DataTableToXml(dt, "GetData", "", "List");
+            return result;
+        }
 
         #endregion 多级数据获取
 
+        /// <summary>
+        /// 获取某年的某一周，周一和周日的日期
+        /// </summary>
+        /// <param name="year"></param>
+        /// <param name="week"></param>
+        /// <returns></returns>
         public Tuple<DateTime, DateTime> GetMonSunTime(int year, int week)
         {
-            //todo;这一周的具体的每天的时间
             DateTime yearTime = Convert.ToDateTime(year + "-01-01");
             DateTime sunTime, monTime;
             monTime = Common.GetWeekFirstDayMon(yearTime);

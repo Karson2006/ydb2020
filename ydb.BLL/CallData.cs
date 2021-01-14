@@ -764,7 +764,7 @@ namespace ydb.BLL
                     runner.ExecuteSqlNone(sql).ToString();
                     int year, weekOfyear;
                     Common.GetWeekIndexOfYear("0", out year, out weekOfyear);
-                    sql = $"Update CallActivity Set FWeek='{weekOfyear}',FMonth='{DateTime.Now.Month}' Where FID='" + id + "'";
+                    sql = $"Update CallActivity Set FWeek='{DateTime.Now + "" + weekOfyear}',FMonth='{DateTime.Now + "" + DateTime.Now.Month}' Where FID='" + id + "'";
                     runner.ExecuteSqlNone(sql);
                 }
             }
