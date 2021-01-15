@@ -291,36 +291,38 @@ namespace ydb.WebService
         #region 多级
 
         [WebMethod]
-        public string GetMultiCallReport(string xmlMessage)
+        public string GetMultiReportJson(string JsonMessage)
         {
-            string result = @"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":"""",""DataRows"":"""" }} }}"; ;
+            string result = @"{{""GetMultiReportJson"":{{ ""Result"":""false"",""Description"":"""",""DataRows"":"""" }} }}";
             string logID = Guid.NewGuid().ToString();
             try
             {
-                FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", "GetCallRepotr2");
+                FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", "GetMultiReport");
 
-                if (Helper.CheckAuthCode("GetData", xmlMessage))
+                if (Helper.CheckAuthCode("GetMultiReportJson", JsonMessage, "json"))
                 {
+                    string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetData");
+                    FileLogger.WriteLog(logID + "|StartxmlString:" + JsonMessage, 1, "", "GetMultiReport");
                     CallRpt rpt = new CallRpt();
-                    result = rpt.GetMultiCallReport(xmlMessage);
+                    result = rpt.GetMultiCallReport(xmlString);
                 }
             }
             catch (Exception err)
             {
-                result = $@"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":""{ err.Message}"",""DataRows"":"""" }} }}"; ;
+                result = $@"{{""GetMultiReportJson"":{{ ""Result"":""false"",""Description"":""{ err.Message}"",""DataRows"":"""" }} }}"; ;
             }
-            FileLogger.WriteLog(logID + "|End:" + result, 1, "", "GetMultiReport");
+            FileLogger.WriteLog(logID + "|End:" + result, 1, "", "GetMultiReportJson");
             return result;
         }
 
-        [WebMethod]
-        public string GetMultiReportJson(string JsonMessage)
-        {
-            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetData");
-            string result = GetMultiCallReport(xmlString);
-            result = iTR.Lib.Common.XML2Json(result, "GetData");
-            return result;
-        }
+        //[WebMethod]
+        //public string GetMultiReportJson(string JsonMessage)
+        //{
+        //    string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetMultiReport");
+        //    string result = GetMultiReport(xmlString);
+        //    result = iTR.Lib.Common.XML2Json(result, "GetMultiReport");
+        //    return result;
+        //}
 
         #endregion 多级
     }

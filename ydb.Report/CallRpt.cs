@@ -278,6 +278,7 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
+            xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
             string result = "",
                 startdate = "",
                 enddate = "",
@@ -292,15 +293,15 @@ namespace ydb.Report
 
                 id = "";
             int querytype = -1, year;
-            result = @"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":"""",""dataRow"":"""" }} }}";
+            result = @"{{""GetMultiReportJson"":{{ ""Result"":""false"",""Description"":"""",""DataRows"":"""" }} }}";
             XmlDocument doc = new XmlDocument();
             try
             {
                 doc.LoadXml(xmlString);
-                XmlNode node = doc.SelectSingleNode("GetData/weekIndex");
+                XmlNode node = doc.SelectSingleNode("GetData/employeeId");
                 if (node != null && node.InnerText.Trim().Length > 0)
                 {
-                    weekIndex = node.InnerText.Trim();
+                    employeeId = node.InnerText.Trim();
                 }
                 //显示详情
                 node = doc.SelectSingleNode("GetData/typeid");
@@ -348,13 +349,13 @@ namespace ydb.Report
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = new DataTable();
                 WorkShip workShip = new WorkShip();
-                if (viewmonth.Contains('|'))
+                if (viewmonth.Contains('-'))
                 {
-                    year = int.Parse(viewmonth.Split('|')[0]);
+                    year = int.Parse(viewmonth.Split('-')[0]);
                 }
                 else
                 {
-                    year = int.Parse(viewweek.Split('|')[0]);
+                    year = int.Parse(viewweek.Split('-')[0]);
                 }
                 //部门获取superID 修改 查询id
                 if (querytype == 0)
@@ -368,9 +369,9 @@ namespace ydb.Report
                 if (viewtype == "0")
                 {
                     startDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
-                    endDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[1];
+                    endDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
                     //获取月的所有周次序
-                    string monthWeeks = Common.GetMonthsWeek(year, int.Parse(viewmonth));
+                    string monthWeeks = Common.GetMonthsWeek(year, int.Parse(viewmonth.Split('-')[1]));
                     foreach (string item in monthWeeks.Split('|'))
                     {
                         if (!string.IsNullOrEmpty(item))
@@ -430,7 +431,7 @@ namespace ydb.Report
                             querytype = 0;
                             //根据depid获取管理人员employeeId
                             sql =
-                                "SELECT ti.FName,td.FSupervisorID  FROM yaodaibao.dbo.t_Departments td LEFT JOIN t_Items ti ON td.FID = ti.FID Where FIsDeleted =0 and FID='" +
+                                "SELECT ti.FName,td.FSupervisorID  FROM yaodaibao.dbo.t_Departments td LEFT JOIN t_Items ti ON td.FID = ti.FID Where td.FIsDeleted =0 and td.FID='" +
                                 item["FID"] + "'";
                             runner = new SQLServerHelper();
                             dt = runner.ExecuteSql(sql);
@@ -444,8 +445,9 @@ namespace ydb.Report
                         }
                         if (viewtype == "0")
                         {
-                            //根据周分组
-                            sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join(",", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
+                            ////根据周分组
+                            //sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join("','", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
+                            sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FEmployeeID In('{subids}') Group by FType ";
                         }
                         //这一周的拜访医院
                         else
@@ -469,14 +471,14 @@ namespace ydb.Report
                             }
                             rowList.Add("[" + string.Join(",", timesList.ToArray()) + "]");
                         }
-                        subList.Add($@"{{""name"":{item["FName"]},""id"":{item["FID"].ToString().Replace("E", "")},""querytype"":""{ querytype}"",""tableHead"":[{string.Join(",", timeList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":{item["FID"].ToString().Replace("E", "")},""querytype"":""{ querytype}"", ""viewtype"":""{int.Parse(viewtype) + 1}"", ""tableHead"":[""日期"",{string.Join(",", timeList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                     }
                 }
-                result = $@"{{""GetMultiCallReport"":{{ ""result"":""true"",""Description"":"""",""dataRow"":[{string.Join(",", subList.ToArray())}] }} }}";
+                result = $@"{{""GetMultiReportJson"":{{ ""Result"":""true"",""Description"":"""",""DataRows"":{{""DataRow"":[{string.Join(",", subList.ToArray())}] }} }} }}";
             }
             catch (Exception e)
             {
-                result = $@"{{""GetMultiCallReport"":{{ ""result"":""false"",""Description"":""{ e.Message}"",""dataRow"":"""" }} }}";
+                result = $@"{{""GetMultiReportJson"":{{ ""Result"":""false"",""Description"":""{ e.Message}"",""DataRows"":"""" }} }}";
             }
             return result;
         }
@@ -486,11 +488,13 @@ namespace ydb.Report
         {
             try
             {
-                string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString,t2.FEmployeeID as employeeId,  t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName  FROM ScheduleExecutor t1  Left Join Schedule t2 On t1.FScheduleID= t2.FID  Left Join t_Items t3 On t1.FExcutorID= t3.FID  Left Join t_Items t4 On t4.FID= t2.FInstitutionID where   t2.FEmployeeID = '{employeeId}' and FStartTime between '{startDate}'   and   DATEADD(year, 1, '{endDate}') and  order by t2.FStartTime Desc";
+                //string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString,t2.FEmployeeID as employeeId,  t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName  FROM ScheduleExecutor t1  Left Join Schedule t2 On t1.FScheduleID= t2.FID  Left Join t_Items t3 On t1.FExcutorID= t3.FID  Left Join t_Items t4 On t4.FID= t2.FInstitutionID where   t2.FEmployeeID = '{employeeId}' and FStartTime between '{startDate}'   and   DATEADD(year, 1, '{endDate}')    order by t2.FStartTime Desc";
+                string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString,t2.FEmployeeID as employeeId,  t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName  FROM ScheduleExecutor t1  Left Join Schedule t2 On t1.FScheduleID= t2.FID  Left Join t_Items t3 On t1.FExcutorID= t3.FID  Left Join t_Items t4 On t4.FID= t2.FInstitutionID where   t2.FEmployeeID = '{employeeId}'     order by t2.FStartTime Desc";
                 SQLServerHelper runHelper = new SQLServerHelper();
-                runHelper.ExecuteSql(sql);
-                DataTable dt = new DataTable();
-                string result = Common.DataTableToXml(dt, "GetMyScheduleList", "", "List");
+
+                DataTable dt = runHelper.ExecuteSql(sql);
+                string result = Common.DataTableToXml(dt, "GetMultiReportJson", "", "List");
+                result = iTR.Lib.Common.XML2Json(result, "GetMultiReportJson");
                 return result;
             }
             catch (Exception e)
@@ -537,21 +541,26 @@ namespace ydb.Report
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
                 DataTable empdt = new DataTable();
+                List<string> depList = new List<string>();
+                foreach (DataRow row in dt.Rows)
+                {
+                    depList.Add($"'{row["FID"].ToString()}'");
+                }
                 //可以查看其它人的数据
                 if (dt.Rows.Count > 0)
                 {
                     manager = true;
-                    sql = "Select ti.FID ,ti.FName from t_Departments td   LEFT JOIN t_Items ti ON ti.FID = td.FID  Where td.FIsDeleted =0 and FParentID='" + deptID + "'";
+                    sql = $"Select ti.FID ,ti.FName from t_Departments td   LEFT JOIN t_Items ti ON ti.FID = td.FID  Where td.FIsDeleted =0 and FParentID in ({string.Join(",", depList.ToArray())})";
                     runner = new SQLServerHelper();
                     dt = runner.ExecuteSql(sql);
-                    sql = $"Select 'E'+ ti.FID FID,ti.FName from t_Employees te   LEFT JOIN t_Items ti ON ti.FID = te.FID    Where te.FIsDeleted =0  and FDeptID in ('{deptID}') or FLeaderList like '%{leaderID}%'";
+                    sql = $"Select 'E'+ ti.FID FID,ti.FName from t_Employees te   LEFT JOIN t_Items ti ON ti.FID = te.FID    Where te.FIsDeleted =0  and FDeptID in ({string.Join(",", depList.ToArray())}) or FLeaderList like '%{leaderID}%'";
                     empdt = runner.ExecuteSql(sql);
                     //合并部门结果和直属人员结果
                     dt.Merge(empdt, false, MissingSchemaAction.Ignore);
                 }
                 else
                 {
-                    sql = $"Select 'E'+ ti.FID FID,ti.FName from t_Employees te   LEFT JOIN t_Items ti ON ti.FID = te.FID   Where te.FIsDeleted =0 and FID ={leaderID} ";
+                    sql = $"Select 'E'+ ti.FID FID,ti.FName from t_Employees te   LEFT JOIN t_Items ti ON ti.FID = te.FID   Where te.FIsDeleted =0 and te.FID ={leaderID} ";
                     dt = runner.ExecuteSql(sql);
                 }
                 return new Tuple<bool, DataTable>(manager, dt);
