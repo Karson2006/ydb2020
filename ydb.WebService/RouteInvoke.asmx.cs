@@ -299,16 +299,16 @@ namespace ydb.WebService
         }
 
         [WebMethod]
-        public string AlterAutoStateJson(string callType, string JsonMessage)
+        public string AlterAutoStatusJson(string callType, string JsonMessage)
         {
-            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "AlterAutoState");
-            string result = AutoRoute(callType, xmlString);
-            result = iTR.Lib.Common.XML2Json(result, "AlterAutoState");
+            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "AlterAutoStatus");
+            string result = AlterAutoStatus(callType, xmlString);
+            result = iTR.Lib.Common.XML2Json(result, "AlterAutoStatus");
             return result;
         }
 
         [WebMethod]
-        public string AlterAutoState(string callType, string xmlMessage)
+        public string AlterAutoStatus(string callType, string xmlMessage)
         {
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                             "<" + callType + ">" +
@@ -322,7 +322,7 @@ namespace ydb.WebService
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     RouteData rData = new RouteData();
-                    result = rData.AlterAutoState(xmlMessage);
+                    result = rData.AlterAutoStatus(xmlMessage);
                 }
             }
             catch (Exception err)

@@ -280,7 +280,8 @@ namespace ydb.Report
         public string GetMultiCallReport(string xmlString)
         {
             xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
-            string result = @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
+            string result =
+                    @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
                 startdate = "",
                 enddate = "",
                 employeeId = "",
@@ -291,7 +292,8 @@ namespace ydb.Report
                 itemtype = "",
                 viewweek = "",
                 viewmonth = "",
-                id = "";
+                nextdep = "",
+            id = "";
             int querytype = -1, year;
 
             XmlDocument doc = new XmlDocument();
@@ -362,6 +364,11 @@ namespace ydb.Report
                     sql = $"SELECT [FSupervisorID] FROM [yaodaibao].[dbo].[t_Departments] where FID = '{id}'";
                     runner = new SQLServerHelper();
                     dt = runner.ExecuteSql(sql);
+                    if (dt.Rows.Count == 0)
+                    {
+                        result = $@"{{""GetMultiReportJson"":{{ ""Result"":""true"",""Description"":"""",""DataRows"":"""" }} }}";
+                        return result;
+                    }
                     employeeId = dt.Rows[0]["FSupervisorID"].ToString();
                 }
                 //月-周
@@ -380,10 +387,23 @@ namespace ydb.Report
                             showdataList.Add($"Sum(Case FWeek When '{year + "-" + item}' Then 1 Else 0 End) AS '{year + "-" + item}'");
                         }
                     }
+                    //如果是部门没有下级直接返回
+                    if (querytype == 0)
+                    {
+                        sql = $"SELECT ti.FID FROM yaodaibao.dbo.t_Items ti LEFT JOIN t_Departments td  ON ti.FParentID  = td.FID WHERE td.FID ='{id}'";
+                        dt = runner.ExecuteSql(sql);
+                        if (dt.Rows.Count == 0)
+                        {
+                            employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
+                            result = GetAlllVisitRecord(employeeId, startDate, endDate);
+                            return result;
+                        }
+                    }
                 }
                 //天-次，一周七天固定列数
                 else
                 {
+                    employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
                     result = GetAlllVisitRecord(employeeId, startDate, endDate);
                     return result;
                     //Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(viewweek));
@@ -410,7 +430,6 @@ namespace ydb.Report
                         employeeId = node.InnerText.Trim();
                     }
                 }
-
                 sql = $"select FDeptID from  yaodaibao.dbo.t_Employees WHERE FID ='{employeeId}'";
                 dt = runner.ExecuteSql(sql);
                 //获取直属下属部门的ID 如果是管理人员
@@ -424,6 +443,7 @@ namespace ydb.Report
                 {
                     foreach (DataRow item in tupledata.Item2.Rows)
                     {
+                        nextdep = "False";
                         if (!item["FID"].ToString().Contains("E"))
                         {
                             querytype = 0;
@@ -435,6 +455,14 @@ namespace ydb.Report
                             dt = runner.ExecuteSql(sql);
                             //根据部门管理者ID获取当前部门和子部门所有的成员ID
                             subids = workShip.GetAllMemberIDsByLeaderID(dt.Rows[0]["FSupervisorID"].ToString()).Replace("|", "','");
+                            //判断是否还有下级部门
+                            sql = $"SELECT * FROM yaodaibao.dbo.t_Items WHERE FParentID IN ('{item["FID"]}')";
+                            DataTable tempdt = new DataTable();
+                            tempdt = runner.ExecuteSql(sql);
+                            if (tempdt.Rows.Count > 0)
+                            {
+                                nextdep = "True";
+                            }
                         }
                         else
                         {
@@ -469,7 +497,8 @@ namespace ydb.Report
                             }
                             rowList.Add("[" + string.Join(",", timesList.ToArray()) + "]");
                         }
-                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""querytype"":""{ querytype}"", ""viewtype"":""{int.Parse(viewtype) + 1}"", ""tableHead"":[""日期"",{string.Join(",", timeList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+
+                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"", ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", timeList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                     }
                 }
                 result = $@"{{""GetMultiReportJson"":{{ ""Result"":""true"",""Description"":"""",""DataRows"":{{""DataRow"":[{string.Join(",", subList.ToArray())}] }} }} }}";
@@ -487,7 +516,7 @@ namespace ydb.Report
             try
             {
                 //string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString,t2.FEmployeeID as employeeId,  t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName  FROM ScheduleExecutor t1  Left Join Schedule t2 On t1.FScheduleID= t2.FID  Left Join t_Items t3 On t1.FExcutorID= t3.FID  Left Join t_Items t4 On t4.FID= t2.FInstitutionID where   t2.FEmployeeID = '{employeeId}' and FStartTime between '{startDate}'   and   DATEADD(year, 1, '{endDate}')    order by t2.FStartTime Desc";
-                string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString,t2.FEmployeeID as employeeId,  t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName  FROM ScheduleExecutor t1  Left Join Schedule t2 On t1.FScheduleID= t2.FID  Left Join t_Items t3 On t1.FExcutorID= t3.FID  Left Join t_Items t4 On t4.FID= t2.FInstitutionID where   t2.FEmployeeID = '{employeeId}'     order by t2.FStartTime Desc";
+                string sql = $"Select t1.FID,Isnull(t2.FName,'') As FInstitutionName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As FTimeString, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  Order by t1.FStartTime Desc";
                 SQLServerHelper runHelper = new SQLServerHelper();
                 DataTable dt = runHelper.ExecuteSql(sql);
                 string result = Common.DataTableToXml(dt, "GetMultiReportJson", "", "List");
@@ -582,8 +611,9 @@ namespace ydb.Report
                     "<DataRows></DataRows>" +
                     "</GetData>";
             WorkShip workShip = new WorkShip();
-            employeeIds = workShip.GetAllMemberIDsByLeaderID(employeeId);
+            //employeeIds = workShip.GetAllMemberIDsByLeaderID(employeeId);
             sql = $"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName , sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,  Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan  From CallActivity t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID  Left Join t_Items t3 On t1.FEmployeeID = t3.FID   Where FDate between '{startDate}' and  '{endDate}' and FEmployeeID In('{employeeIds}') Group by t3.FName,t2.FName,t1.FEmployeeID  Order by CallCount Desc,TimeSpan Desc";
+
             SQLServerHelper runner = new SQLServerHelper();
             DataTable dt = runner.ExecuteSql(sql);
             result = Common.DataTableToXml(dt, "GetData", "", "List");

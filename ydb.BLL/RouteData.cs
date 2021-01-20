@@ -753,32 +753,37 @@ namespace ydb.BLL
 
         #region 修改自动签到状态
 
-        public string AlterAutoState(string xmlstring)
+        public string AlterAutoStatus(string xmlstring)
         {
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AlterState>" +
                        "<Result>False</Result>" +
                        "</AlterState>";
             try
             {
-                string state = "", mode = "";
+                string status = "", mode = "", employeeId = "000000";
                 XmlDocument doc = new XmlDocument();
                 XmlNode pNode = null, cNode = null;
                 doc.LoadXml(xmlstring);
-                XmlNode vNode = doc.SelectSingleNode("AlterAutoState/EmployeeID");
+                XmlNode vNode = doc.SelectSingleNode("AlterAutoStatus/ID");
                 if (vNode == null && vNode.InnerText.Trim() == "")
                 {
                     throw new Exception("employeeID不能为空");
                 }
+
+                employeeId = vNode.InnerText.Trim();
                 //0是保存，1是获取
-                vNode = doc.SelectSingleNode("AlterAutoState/mode");
+                vNode = doc.SelectSingleNode("AlterAutoStatus/Mode");
                 mode = vNode.InnerText.Trim();
-                vNode = doc.SelectSingleNode("AlterAutoState/state");
-                state = vNode.InnerText.Trim();
-                result = $"<AlterState><Result>True</Result><State>{mode}</State></AlterState>";
+                vNode = doc.SelectSingleNode("AlterAutoStatus/Status");
+                status = vNode.InnerText.Trim();
+                if (status == "0")
+                {
+                }
+                result = $"<AlterAutoStatus><Result>True</Result><State>{status}</State></AlterAutoStatus>";
             }
             catch (Exception e)
             {
-                result = $"<?xml version=\"1.0\" encoding=\"utf-8\"?><AlterState><Result>False</Result><Description>{e.Message}</Description></AlterState>";
+                result = $"<?xml version=\"1.0\" encoding=\"utf-8\"?><AlterAutoStatus><Result>False</Result><Description>{e.Message}</Description></AlterAutoStatus>";
             }
             return result;
         }
