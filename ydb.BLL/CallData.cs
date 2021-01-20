@@ -745,7 +745,7 @@ namespace ydb.BLL
                     {
                         Common.GetWeekIndexOfYear("0", out year, out weekOfyear);
                         sql = @"Insert Into CallDetail( FCallID,FDeptID,FClientID,FAims,FResult,FImprovement)
-                                Values('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}')";
+                                Values('{0}','{1}','{2}','{3}','{4}','{5}')";
                         sql = string.Format(sql, id, deptids[i], clientids[i], aims[i], results[i], improvements[i]);
                         runner.ExecuteSqlNone(sql);
                     }
@@ -763,9 +763,7 @@ namespace ydb.BLL
 
                     runner.ExecuteSqlNone(sql).ToString();
                     int year, weekOfyear;
-                    string month;
                     Common.GetWeekIndexOfYear("0", out year, out weekOfyear);
-                    month = DateTime.Now.Month.ToString();
                     sql = $"Update CallActivity Set FWeek='{DateTime.Now.Year + "-" + weekOfyear}',FMonth='{DateTime.Now.ToString("yyyy-MM")}' Where FID='" + id + "'";
                     runner.ExecuteSqlNone(sql);
                 }

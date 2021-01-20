@@ -750,5 +750,39 @@ namespace ydb.BLL
             double result = 2 * Math.Asin(Math.Sqrt(Math.Pow(Math.Sin(a / 2), 2) + Math.Cos(radLat1) * Math.Cos(radLat2) * Math.Pow(Math.Sin(b / 2), 2))) * EARTH_RADIUS;
             return result;
         }
+
+        #region 修改自动签到状态
+
+        public string AlterAutoState(string xmlstring)
+        {
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><AlterState>" +
+                       "<Result>False</Result>" +
+                       "</AlterState>";
+            try
+            {
+                string state = "", mode = "";
+                XmlDocument doc = new XmlDocument();
+                XmlNode pNode = null, cNode = null;
+                doc.LoadXml(xmlstring);
+                XmlNode vNode = doc.SelectSingleNode("AlterAutoState/EmployeeID");
+                if (vNode == null && vNode.InnerText.Trim() == "")
+                {
+                    throw new Exception("employeeID不能为空");
+                }
+                //0是保存，1是获取
+                vNode = doc.SelectSingleNode("AlterAutoState/mode");
+                mode = vNode.InnerText.Trim();
+                vNode = doc.SelectSingleNode("AlterAutoState/state");
+                state = vNode.InnerText.Trim();
+                result = $"<AlterState><Result>True</Result><State>{mode}</State></AlterState>";
+            }
+            catch (Exception e)
+            {
+                result = $"<?xml version=\"1.0\" encoding=\"utf-8\"?><AlterState><Result>False</Result><Description>{e.Message}</Description></AlterState>";
+            }
+            return result;
+        }
+
+        #endregion 修改自动签到状态
     }
 }

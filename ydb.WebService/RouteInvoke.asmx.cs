@@ -15,13 +15,12 @@ namespace ydb.WebService
     [WebService(Namespace = "http://tempuri.org/")]
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
-    // 若要允许使用 ASP.NET AJAX 从脚本中调用此 Web 服务，请取消注释以下行。 
+    // 若要允许使用 ASP.NET AJAX 从脚本中调用此 Web 服务，请取消注释以下行。
     // [System.Web.Script.Services.ScriptService]
     public class RouteInvoke : System.Web.Services.WebService
     {
-
-        
         #region GetRouteList
+
         [WebMethod]
         public string GetRouteList(string callType, string xmlMessage)
         {
@@ -32,7 +31,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-                
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -60,9 +58,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetRouteList");
             return result;
         }
-        #endregion
+
+        #endregion GetRouteList
 
         #region GetRouteDetail
+
         [WebMethod]
         public string GetRouteDetail(string callType, string xmlMessage)
         {
@@ -73,9 +73,8 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-                
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
- 
+
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     RouteData rData = new RouteData();
@@ -106,9 +105,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetRouteDetail");
             return result;
         }
-        #endregion
+
+        #endregion GetRouteDetail
 
         #region SignIn
+
         [WebMethod]
         public string SignIn(string callType, string xmlMessage)
         {
@@ -119,9 +120,8 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-                
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
- 
+
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     RouteData rData = new RouteData();
@@ -147,9 +147,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "SignIn");
             return result;
         }
-        #endregion
+
+        #endregion SignIn
 
         #region SignOut
+
         [WebMethod]
         public string SignOut(string callType, string xmlMessage)
         {
@@ -160,9 +162,8 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-               
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
- 
+
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     RouteData rData = new RouteData();
@@ -188,9 +189,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "SignOut");
             return result;
         }
-        #endregion
+
+        #endregion SignOut
 
         #region DeleteRoute
+
         [WebMethod]
         public string DeleteRoute(string callType, string xmlMessage)
         {
@@ -198,9 +201,8 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-               
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
- 
+
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     XmlDocument doc = new XmlDocument();
@@ -215,7 +217,7 @@ namespace ydb.WebService
                         result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                                 "<" + callType + ">" +
                                 "<Result>True</Result>" +
-                                "C" + doc.SelectSingleNode(callType + "/RouteID").InnerText  + "</ID>" +
+                                "C" + doc.SelectSingleNode(callType + "/RouteID").InnerText + "</ID>" +
                                 "<Description></Description></" + callType + ">";
                     }
                     else
@@ -246,7 +248,8 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "DeleteRoute");
             return result;
         }
-        #endregion
+
+        #endregion DeleteRoute
 
         /// <summary>
         /// 自动签到和签退
@@ -254,7 +257,9 @@ namespace ydb.WebService
         /// <param name="callType"></param>
         /// <param name="xmlMessage"></param>
         /// <returns></returns>
-        #region AutoRoute    
+
+        #region AutoRoute
+
         [WebMethod]
         public string AutoRoute(string callType, string xmlMessage)
         {
@@ -265,8 +270,7 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
-                FileLogger.WriteLog("自动定位Start:|" + logID  + xmlMessage, 1, "", callType);
+                FileLogger.WriteLog("自动定位Start:|" + logID + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
@@ -290,9 +294,48 @@ namespace ydb.WebService
         {
             string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "AutoRoute");
             string result = AutoRoute(callType, xmlString);
-             result = iTR.Lib.Common.XML2Json(result, "AutoRoute");
+            result = iTR.Lib.Common.XML2Json(result, "AutoRoute");
             return result;
         }
-        #endregion
+
+        [WebMethod]
+        public string AlterAutoStateJson(string callType, string JsonMessage)
+        {
+            string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "AlterAutoState");
+            string result = AutoRoute(callType, xmlString);
+            result = iTR.Lib.Common.XML2Json(result, "AlterAutoState");
+            return result;
+        }
+
+        [WebMethod]
+        public string AlterAutoState(string callType, string xmlMessage)
+        {
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                            "<" + callType + ">" +
+                            "<Result>False</Result>" +
+                            "<Description></Description></" + callType + ">";
+            string logID = Guid.NewGuid().ToString();
+            try
+            {
+                FileLogger.WriteLog("自动签到开关Start:|" + logID + xmlMessage, 1, "", callType);
+
+                if (Helper.CheckAuthCode(callType, xmlMessage))
+                {
+                    RouteData rData = new RouteData();
+                    result = rData.AlterAutoState(xmlMessage);
+                }
+            }
+            catch (Exception err)
+            {
+                result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                         "<" + callType + ">" +
+                         "<Result>False</Result>" +
+                         "<Description>" + err.Message + "</Description></" + callType + ">";
+            }
+            FileLogger.WriteLog("自动签到开关End:|" + logID + "" + result, 1, "", callType);
+            return result;
+        }
+
+        #endregion AutoRoute
     }
 }
