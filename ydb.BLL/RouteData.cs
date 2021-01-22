@@ -630,14 +630,20 @@ namespace ydb.BLL
                                  "<Result>False</Result>" +
                                  "<Description/><RoutID></RoutID>" +
                                  "</AutoRoute>", employeeId, lat, lng, fDate, signTime;
-            return result;
             try
             {
                 XmlDocument doc = new XmlDocument();
                 XmlNode pNode = null, cNode = null;
 
                 doc.LoadXml(xmlString);
-                XmlNode vNode = doc.SelectSingleNode("AutoRoute/EmployeeID");
+                XmlNode vNode = doc.SelectSingleNode("AutoRoute/Version");
+                //不是新版本不签到
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
+                {
+                    return result;
+                }
+
+                vNode = doc.SelectSingleNode("AutoRoute/EmployeeID");
                 if (vNode == null || vNode.InnerText.Trim().Length == 0)
                     throw new Exception("签到者ID不能为空");
                 else
@@ -760,14 +766,15 @@ namespace ydb.BLL
                        "</AlterState>";
             try
             {
-                string status = "", mode = "", employeeId = "000000";
+                string status = "", mode = "", employeeId = "000000", sql = "";
                 XmlDocument doc = new XmlDocument();
                 XmlNode pNode = null, cNode = null;
                 doc.LoadXml(xmlstring);
+                DataTable dataTable = new DataTable();
                 XmlNode vNode = doc.SelectSingleNode("AlterAutoStatus/ID");
                 if (vNode == null && vNode.InnerText.Trim() == "")
                 {
-                    throw new Exception("employeeID不能为空");
+                    throw new Exception("ID不能为空");
                 }
 
                 employeeId = vNode.InnerText.Trim();
@@ -775,11 +782,34 @@ namespace ydb.BLL
                 vNode = doc.SelectSingleNode("AlterAutoStatus/Mode");
                 mode = vNode.InnerText.Trim();
                 vNode = doc.SelectSingleNode("AlterAutoStatus/Status");
-                status = vNode.InnerText.Trim();
-                if (status == "0")
+                if (vNode != null && vNode.InnerText.Trim() != "")
                 {
+                    status = vNode.InnerText.Trim();
                 }
-                result = $"<AlterAutoStatus><Result>True</Result><State>{status}</State></AlterAutoStatus>";
+                SQLServerHelper runner = new SQLServerHelper();
+                //保存自动签到状态
+                if (mode == "0")
+                {
+                    sql = $"if exists (select FID from yaodaibao.dbo.Profile   where FEmployeeID='{ employeeId}') update yaodaibao.dbo.Profile set FRouteStatus = '{status}' where FEmployeeID = '{employeeId}' ELSE  insert into yaodaibao.dbo.Profile(FEmployeeID, FRouteStatus) values('{employeeId}', '{status}') select FRouteStatus from Profile where FEmployeeID = '{employeeId}'";
+                    dataTable = runner.ExecuteSql(sql);
+                    result = $"<AlterAutoStatus><Result>True</Result><Status>{dataTable.Rows[0]["FRouteStatus"]}</Status></AlterAutoStatus>";
+                }
+                else
+                {
+                    sql = $"select FRouteStatus from yaodaibao.dbo.Profile where FEmployeeID = '{employeeId}'";
+                    dataTable = runner.ExecuteSql(sql);
+                    //开启自动了签到
+                    if (dataTable.Rows.Count > 0 && dataTable.Rows[0]["FRouteStatus"].ToString() == "True")
+                    {
+                        result = $"<AlterAutoStatus><Result>True</Result><Status>{dataTable.Rows[0]["FRouteStatus"]}</Status></AlterAutoStatus>";
+                    }
+                    else
+                    {
+                        result = $"<AlterAutoStatus><Result>False</Result><Status></Status></AlterAutoStatus>";
+                    }
+                }
+
+                return result;
             }
             catch (Exception e)
             {
