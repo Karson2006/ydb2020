@@ -8,6 +8,7 @@ using iTR.Lib;
 using System.Data;
 using ydb.BLL;
 using System.Configuration;
+using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.Web.Services;
@@ -279,6 +280,7 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
+            xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
             string result =
                     @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
                 startdate = "",
@@ -354,6 +356,8 @@ namespace ydb.Report
                 List<string> columnname = new List<string>();
                 List<string> timeList = new List<string>();
                 List<string> weekNameList = new List<string>();
+                List<string> staticNamelist = new List<string>();
+                List<string> Sumlist = new List<string>();
                 string sql = "", allId = "", startDate = "", endDate = "";
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = new DataTable();
@@ -387,7 +391,7 @@ namespace ydb.Report
                         employeeId = id;
                     }
                 }
-                //月-周
+                //月-周 准备列的查询格式
                 if (viewtype == "0")
                 {
                     startDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
@@ -402,6 +406,7 @@ namespace ydb.Report
                             timeList.Add($"{year}-{item}");
                             weekNameList.Add($@"""{year}-第{item}周""");
                             showdataList.Add($"Sum(Case FWeek When '{year + "-" + item}' Then 1 Else 0 End) AS '{year + "-" + item}'");
+                            Sumlist.Add($"Sum(Case FWeek When '{year + "-" + item}' Then 1 Else 0 End)");
                         }
                     }
                     ////如果是部门没有下级直接返回
@@ -417,7 +422,24 @@ namespace ydb.Report
                     //    }
                     //}
                 }
-                // 列出所有拜访医院
+                //是周又是部门 列出统计数量
+                else if (viewtype == "1" && querytype == 0)
+                {
+                    employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
+                    //Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(viewweek));
+                    //for (int i = 0; i < 7; i++)
+                    //{
+                    //    columnname.Add(monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd"));
+                    //    weektimeList.Add("\"" + monsunTuple.Item1.AddDays(i).ToString("yyyy-MM-dd") + "\"");
+                    //    showdataList.Add($"Sum(Case  CONVERT(varchar(100), FDate, 112) When '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}' Then 1 Else 0 End) AS '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}'");
+                    //}
+                    //columnname.Add(monsunTuple.Item1.AddDays(0).ToString("yyyyMMdd"));
+                    //weektimeList.Add("\"" + monsunTuple.Item1.AddDays(i).ToString("yyyy-MM-dd") + "\"");
+                    //showdataList.Add($"Sum(Case  CONVERT(varchar(100), FDate, 112) When '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}' Then 1 Else 0 End) AS '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}'");
+                    result = GetAllVisitAmount(employeeId, viewweek, calltype);
+                    return result;
+                }
+                //如果不是周的 列出所有拜访医院
                 else
                 {
                     employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
@@ -431,7 +453,7 @@ namespace ydb.Report
                     //columnname.Add(monsunTuple.Item1.AddDays(0).ToString("yyyyMMdd"));
                     //weektimeList.Add("\"" + monsunTuple.Item1.AddDays(i).ToString("yyyy-MM-dd") + "\"");
                     //showdataList.Add($"Sum(Case  CONVERT(varchar(100), FDate, 112) When '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}' Then 1 Else 0 End) AS '{monsunTuple.Item1.AddDays(i).ToString("yyyyMMdd")}'");
-                    result = GetAlllVisitRecord(employeeId, viewweek, calltype);
+                    result = GetAllVisitRecord(employeeId, viewweek, calltype);
                     return result;
                 }
                 //下载所有的 直接返回結果
@@ -459,10 +481,21 @@ namespace ydb.Report
                 List<string> subList = new List<string>();
                 string subids = "", subdata = "";
                 //统计型 遍历部门和人
+                //foreach (string name in weekNameList)
+                //{
+                //    staticNamelist.Add(name);
+                //}
+                staticNamelist = new List<string>(weekNameList.ToArray());
                 if (tupledata.Item2.Rows.Count > 0)
                 {
                     foreach (DataRow item in tupledata.Item2.Rows)
                     {
+                        weekNameList = new List<string>();
+                        //foreach (string name in staticNamelist)
+                        //{
+                        //    weekNameList.Add(name);
+                        //}
+                        weekNameList = new List<string>(staticNamelist.ToArray());
                         nextdep = "False";
                         if (!item["FID"].ToString().Contains("E"))
                         {
@@ -473,8 +506,10 @@ namespace ydb.Report
                                 item["FID"] + "'";
                             runner = new SQLServerHelper();
                             dt = runner.ExecuteSql(sql);
+
                             //根据部门管理者ID获取当前部门和子部门所有的成员ID
                             subids = workShip.GetAllMemberIDsByLeaderID(dt.Rows[0]["FSupervisorID"].ToString()).Replace("|", "','");
+
                             //判断是否还有下级部门
                             sql = $"SELECT * FROM yaodaibao.dbo.t_Items WHERE FParentID IN ('{item["FID"]}')";
                             DataTable tempdt = new DataTable();
@@ -493,14 +528,15 @@ namespace ydb.Report
                         {
                             ////根据周分组
                             //sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join("','", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
-                            sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where  FWeek in ('{string.Join("','", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
+                            sql = $" Select FType, {string.Join(",", showdataList.ToArray()) } ,{string.Join("+", Sumlist.ToArray()) } as amount From CallActivity t1 where  FWeek in ('{string.Join("','", timeList.ToArray())}') and FEmployeeID In('{subids}') and  FType is not null Group by FType ";
                         }
+
                         //这一周的拜访医院
-                        else
-                        {
-                            //根据天分组
-                            sql = $" Select FType,  {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join(",", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
-                        }
+                        //else
+                        //{
+                        //    //根据天分组
+                        //    sql = $" Select FType,  {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join(",", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
+                        //}
                         runner = new SQLServerHelper();
                         //统计晨访，夜访....
                         tempTable = runner.ExecuteSql(sql);
@@ -508,8 +544,39 @@ namespace ydb.Report
                         {
                             continue;
                         }
+                        List<string> removeNameList = new List<string>();
+
+                        foreach (var column in tempTable.Columns.Cast<DataColumn>().ToArray())
+                        {
+                            if (tempTable.AsEnumerable().All(dr => dr[column.ColumnName].ToString() == "0"))
+                            {
+                                removeNameList.Add("\"" + column.ColumnName.Replace("-", "-第") + "周" + "\"");
+                                tempTable.Columns.Remove(column.ColumnName);
+                            }
+                        }
+                        //List<string> removeList = new List<string>();
+                        //bool removeflag = false;
+                        //for (int j = 0; j < tempTable.Rows.Count; j++)
+                        //{
+                        //    removeflag = true;
+                        //    for (int i = 0; i < tempTable.Columns.Count; i++)
+                        //    {
+                        //        if (tempTable.Rows[j][i].ToString() != "0")
+                        //        {
+                        //            removeflag = false;
+                        //        }
+                        //    }
+                        //    if (removeflag)
+                        //    {
+                        //        tempTable.Columns.Remove(column)
+                        //    }
+                        //}
+
                         //保存行的
                         List<string> rowList = new List<string>();
+                        //总共有多少条数据
+                        int amount = 0;
+
                         //给定格式
                         foreach (DataRow row in tempTable.Rows)
                         {
@@ -517,12 +584,27 @@ namespace ydb.Report
                             List<string> timesList = new List<string>();
                             for (int i = 0; i < tempTable.Columns.Count; i++)
                             {
-                                timesList.Add("\"" + row[i].ToString() + "\"");
+                                if (tempTable.Columns[i].ColumnName != "amount")
+                                {
+                                    timesList.Add("\"" + row[i].ToString() + "\"");
+                                }
+                                else
+                                {
+                                    amount += int.Parse(row[i].ToString());
+                                }
                             }
                             rowList.Add("[" + string.Join(",", timesList.ToArray()) + "]");
                         }
 
-                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"", ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                        foreach (string name in removeNameList)
+                        {
+                            if (weekNameList.Contains(name))
+                            {
+                                weekNameList.Remove(name);
+                            }
+                        }
+
+                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"", ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                     }
                 }
 
@@ -539,19 +621,43 @@ namespace ydb.Report
             {
                 result = $@"{{""GetMultiReportJson"":{{ ""Result"":""false"",""Description"":""{ e.Message}"",""DataRows"":"""" }} }}";
             }
+
             return result;
         }
 
         //列出人员的拜访医院列表
-        public string GetAlllVisitRecord(string employeeId, string weekindex, string calltype = "")
+        public string GetAllVisitRecord(string employeeId, string weekindex, string calltype = "")
         {
             try
             {
-                string sql = $"Select t1.FID,Isnull(t2.FName,'') As FInstitutionName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As FTimeString, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FStartTime Desc";
+                //string sql = $"Select t1.FID,Isnull(t2.FName,'') As FInstitutionName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As FTimeString, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FStartTime Desc";
+                string sql = $"Select 'false' statis, t1.FID,Isnull(t2.FName,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As Amount, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FStartTime Desc";
+                if (calltype.Trim() != "")
+                {
+                    sql = $"Select 'false' statis, t1.FID,Isnull(t2.FName,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As Amount, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FStartTime Desc";
+                }
+                SQLServerHelper runHelper = new SQLServerHelper();
+                DataTable dt = runHelper.ExecuteSql(sql);
+                string result = Common.DataTableToXml(dt, "GetMultiReportJson", "", "List");
+                result = iTR.Lib.Common.XML2Json(result, "GetMultiReportJson");
+                return result;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        //列出人员的拜访统计数量
+        public string GetAllVisitAmount(string employeeId, string weekindex, string calltype = "")
+        {
+            try
+            {
+                string sql = $"Select 'true' as statis , t1.FEmployeeID,COUNT(FEmployeeID)  as Amount,t4.FName  as FName  From [CallActivity] t1 Left Join  t_Items t4 On t1.FEmployeeID= t4.FID where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}')  group by  t1.FEmployeeID,FName order by Amount desc";
                 //string sql = $"SELECT (Left(CONVERT(varchar(100), t2.FStartTime, 120),16) +'~'+ Left(CONVERT(varchar(100), t2.FEndTime, 120),16)) As TimeString,t2.FEmployeeID as employeeId,  t1.FExcutorID,t3.FName AS FExcutorName,t2.FSubject As SubjectString ,t1.FScheduleID As FID,t2.FInstitutionID As FInstitutionID,t4.FName As InstitutionName  FROM ScheduleExecutor t1  Left Join Schedule t2 On t1.FScheduleID= t2.FID  Left Join t_Items t3 On t1.FExcutorID= t3.FID  Left Join t_Items t4 On t4.FID= t2.FInstitutionID where   t2.FEmployeeID = '{employeeId}' and FStartTime between '{startDate}'   and   DATEADD(year, 1, '{endDate}')    order by t2.FStartTime Desc";
                 if (calltype.Trim() != "")
                 {
-                    sql = $"Select t1.FID,Isnull(t2.FName,'') As FInstitutionName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As FTimeString, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FStartTime Desc";
+                    sql = $"Select 'true' as statis ,  t1.FEmployeeID,COUNT(FEmployeeID)  as Amount,t4.FName  as FName  From [CallActivity] t1 Left Join  t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') group by FName,  t1.FEmployeeID  order by Amount desc";
                 }
                 SQLServerHelper runHelper = new SQLServerHelper();
                 DataTable dt = runHelper.ExecuteSql(sql);
