@@ -280,7 +280,6 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
-            xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
             string result =
                     @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
                 startdate = "",
