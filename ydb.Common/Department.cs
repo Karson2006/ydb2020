@@ -769,5 +769,39 @@ namespace ydb.BLL
                     GetAllSbuDeptsByDeptID(row["FID"].ToString());
             }
         }
+
+        /// <summary>
+        /// 遍历查询所有子部门
+        /// </summary>
+        /// <param name="deptID"></param>
+        private void GetResSubsID(string deptID)
+        {
+            if (deptIDs.Length == 0)
+                deptIDs = deptID;
+            SQLServerHelper runner = new SQLServerHelper();
+            List<string> subs = new List<string>();
+            string sql = $@" with temp(FID)
+                as
+                (
+            select FID  from t_Items
+            where FParentID = '{deptID}'
+            union all
+                select a.FID  from t_Items a
+                inner join
+                temp b
+            on(b.FID = a.FParentID)
+                )
+            select * from temp";
+            DataTable dt = runner.ExecuteSql(sql);
+
+            if (dt.Rows.Count > 0)
+            {
+                foreach (DataRow row in dt.Rows)
+                {
+                    subs.Add(row["FID"].ToString()); ;
+                }
+                deptIDs = string.Join("|", subs.ToArray());
+            }
+        }
     }
 }

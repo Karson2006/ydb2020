@@ -8,7 +8,6 @@ using ydb.BLL;
 using System.Xml;
 using Newtonsoft.Json;
 
-
 //using System.Collections;
 //using System.ComponentModel;
 //using System.Data;
@@ -17,9 +16,9 @@ using Newtonsoft.Json;
 //using System.Web.Services.Protocols;
 //using System.Xml.Linq;
 using System.IO;
+
 //using System.Text;
 //using System.Security.Cryptography;
-
 
 namespace ydb.WebService
 {
@@ -29,11 +28,12 @@ namespace ydb.WebService
     [WebService(Namespace = "http://tempuri.org/")]
     [WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
     [System.ComponentModel.ToolboxItem(false)]
-    // 若要允许使用 ASP.NET AJAX 从脚本中调用此 Web 服务，请取消注释以下行。 
+    // 若要允许使用 ASP.NET AJAX 从脚本中调用此 Web 服务，请取消注释以下行。
     // [System.Web.Script.Services.ScriptService]
     public class RegistrationInvoke : System.Web.Services.WebService
     {
         #region GetRegStatusByMobile
+
         [WebMethod]
         public string GetRegStatusByMobile(string callType, string xmlMessage)
         {
@@ -44,7 +44,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -62,8 +61,8 @@ namespace ydb.WebService
             }
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
-
         }
+
         [WebMethod]
         public string GetRegStatusByMobileJson(string callType, string JsonMessage)
         {
@@ -72,10 +71,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetRegStatusByMobile");
             return result;
         }
-        #endregion
-      
+
+        #endregion GetRegStatusByMobile
 
         #region ChangePassword
+
         [WebMethod]
         public string ChangePassword(string callType, string xmlMessage)
         {
@@ -86,7 +86,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-               
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -113,10 +112,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "ChangePassword");
             return result;
         }
-  
-        #endregion
+
+        #endregion ChangePassword
 
         #region SetPassword
+
         [WebMethod]
         public string SetPassword(string callType, string xmlMessage)
         {
@@ -127,7 +127,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -146,6 +145,7 @@ namespace ydb.WebService
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
         }
+
         [WebMethod]
         public string SetPasswordJson(string callType, string JsonMessage)
         {
@@ -154,9 +154,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "SetPassword");
             return result;
         }
-        #endregion
+
+        #endregion SetPassword
 
         #region Login
+
         [WebMethod]
         public string Login(string callType, string xmlMessage)
         {
@@ -167,8 +169,7 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
-                FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
+                FileLogger.WriteLog(logID + "|Start:", 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
@@ -193,7 +194,7 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", callType);
             string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "Login");
-           
+
             FileLogger.WriteLog(logID + "|Json2XML:" + xmlString, 1, "", callType);
             string result = Login(callType, xmlString);
             FileLogger.WriteLog(logID + "|Login:" + result, 1, "", callType);
@@ -202,9 +203,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion Login
 
         #region CheckRegistration
+
         [WebMethod]
         public string CheckRegistration(string callType, string xmlMessage)
         {
@@ -213,11 +215,10 @@ namespace ydb.WebService
                           "<Result>False</Result>" +
                           "<EmployeeID></EmployeeID>" +
                           "<Description></Description></Registration>";
-            
+
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("Registration", xmlMessage))
@@ -240,15 +241,14 @@ namespace ydb.WebService
                                         "</GetEmployeeList>";
                     Employee emp = new Employee();
                     doc.LoadXml(emp.GetEmployeeList(xmlString));
-                    if(doc.SelectSingleNode("GetEmployeeList/Result").InnerText=="True")//该手机号码已建档
+                    if (doc.SelectSingleNode("GetEmployeeList/Result").InnerText == "True")//该手机号码已建档
                     {
-                        string employeeID = doc.SelectSingleNode("GetEmployeeList/DataRows/DataRow/ID").InnerText; 
+                        string employeeID = doc.SelectSingleNode("GetEmployeeList/DataRows/DataRow/ID").InnerText;
                         doc.LoadXml(result);
-                        doc.SelectSingleNode("Registration/Result").InnerText ="True";
+                        doc.SelectSingleNode("Registration/Result").InnerText = "True";
                         doc.SelectSingleNode("Registration/EmployeeID").InnerText = employeeID;
                         result = doc.OuterXml;
                     }
-
                 }
             }
             catch (Exception err)
@@ -261,6 +261,7 @@ namespace ydb.WebService
             FileLogger.WriteLog(logID + "|End:" + result, 1, "", callType);
             return result;
         }
+
         [WebMethod]
         public string CheckRegistrationJson(string callType, string JsonMessage)
         {
@@ -270,9 +271,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion CheckRegistration
 
         #region CheckInvitationCode
+
         /// <summary>
         /// 邀请码检查
         /// </summary>
@@ -286,13 +288,12 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     Employee emp = new Employee();
-                    result=emp.CheckInvitationCode(xmlMessage);
+                    result = emp.CheckInvitationCode(xmlMessage);
                 }
             }
             catch (Exception err)
@@ -315,9 +316,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion CheckInvitationCode
 
         #region CreateInvitationCode
+
         /// <summary>
         /// 邀请码检查
         /// </summary>
@@ -331,7 +333,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -359,9 +360,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "CreateInvitationCode");
             return result;
         }
-        #endregion
+
+        #endregion CreateInvitationCode
 
         #region GetInvitationCode
+
         /// <summary>
         /// 邀请码检查
         /// </summary>
@@ -376,7 +379,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -404,9 +406,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "GetInvitationCode");
             return result;
         }
-        #endregion
+
+        #endregion GetInvitationCode
 
         #region SaveRegType
+
         [WebMethod]
         public string SaveRegType(string callType, string xmlMessage)
         {
@@ -417,18 +421,17 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("UpdateRegistration", xmlMessage))
                 {
                     RegApplication regApp = new RegApplication();
                     string id = regApp.Update(xmlMessage);
-                    if(id.Trim().Length ==36)
+                    if (id.Trim().Length == 36)
                         result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                                   "<" + callType + ">" +
                                   "<Result>True</Result>" +
-                                  "<ID>"+id+"</ID>" +
+                                  "<ID>" + id + "</ID>" +
                                   "<Description>操作成功</Description></" + callType + ">";
                 }
             }
@@ -452,9 +455,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion SaveRegType
 
         #region GetRegType
+
         [WebMethod]
         public string GetRegType(string callType, string xmlMessage)
         {
@@ -465,7 +469,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("GetRegistrationData", xmlMessage))
@@ -501,9 +504,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion GetRegType
 
         #region SaveRegProduct
+
         [WebMethod]
         public string SaveRegProduct(string callType, string xmlMessage)
         {
@@ -514,7 +518,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("UpdateRegistration", xmlMessage))
@@ -529,7 +532,6 @@ namespace ydb.WebService
                                   "<Result>True</Result>" +
                                   "<ID>" + id + "</ID>" +
                                   "<Description>操作成功</Description></" + callType + ">";
-
                 }
             }
             catch (Exception err)
@@ -552,9 +554,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion SaveRegProduct
 
         #region GetRegProduct
+
         [WebMethod]
         public string GetRegProduct(string callType, string xmlMessage)
         {
@@ -565,7 +568,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("GetRegistrationData", xmlMessage))
@@ -601,9 +603,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion GetRegProduct
 
         #region SaveRegAuthData
+
         [WebMethod]
         public string SaveRegAuthData(string callType, string xmlMessage)
         {
@@ -614,7 +617,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("UpdateRegistration", xmlMessage))
@@ -632,7 +634,6 @@ namespace ydb.WebService
                                   "<Result>True</Result>" +
                                   "<ID>" + id + "</ID>" +
                                   "<Description>操作成功</Description></" + callType + ">";
-
                 }
             }
             catch (Exception err)
@@ -655,9 +656,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion SaveRegAuthData
 
         #region GetRegAuthData
+
         [WebMethod]
         public string GetRegAuthData(string callType, string xmlMessage)
         {
@@ -668,7 +670,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("GetRegistrationData", xmlMessage))
@@ -695,7 +696,6 @@ namespace ydb.WebService
             return result;
         }
 
-
         [WebMethod]
         public string GetRegAuthDataJson(string callType, string JsonMessage)
         {
@@ -705,9 +705,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion GetRegAuthData
 
         #region SaveRegPerformance
+
         [WebMethod]
         public string SaveRegPerformance(string callType, string xmlMessage)
         {
@@ -719,7 +720,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("UpdateRegistration", xmlMessage))
@@ -759,9 +759,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion SaveRegPerformance
 
         #region GetRegPerformance
+
         [WebMethod]
         public string GetRegPerformance(string callType, string xmlMessage)
         {
@@ -773,7 +774,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("GetRegistrationData", xmlMessage))
@@ -813,9 +813,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion GetRegPerformance
 
         #region SaveRegApplicant
+
         [WebMethod]
         public string SaveRegApplicant(string callType, string xmlMessage)
         {
@@ -826,7 +827,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("UpdateRegistration", xmlMessage))
@@ -853,7 +853,6 @@ namespace ydb.WebService
             return result;
         }
 
-
         [WebMethod]
         public string SaveRegApplicantJson(string callType, string JsonMessage)
         {
@@ -863,10 +862,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
-
+        #endregion SaveRegApplicant
 
         #region GetRegApplicant
+
         [WebMethod]
         public string GetRegApplicant(string callType, string xmlMessage)
         {
@@ -877,7 +876,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("GetRegistrationData", xmlMessage))
@@ -906,9 +904,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion GetRegApplicant
 
         #region GetRegRelationShip
+
         [WebMethod]
         public string GetRegRelationShip(string callType, string xmlMessage)
         {
@@ -919,7 +918,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("GetRegistrationData", xmlMessage))
@@ -939,7 +937,6 @@ namespace ydb.WebService
             return result;
         }
 
-
         [WebMethod]
         public string GetRegRelationShipJson(string callType, string JsonMessage)
         {
@@ -949,9 +946,10 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion GetRegRelationShip
 
         #region SendVCode
+
         [WebMethod]
         public string SendVCode(string callType, string xmlMessage)
         {
@@ -963,7 +961,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -983,7 +980,6 @@ namespace ydb.WebService
             return result;
         }
 
-
         [WebMethod]
         public string SendVCodeJson(string callType, string JsonMessage)
         {
@@ -992,9 +988,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "SendVCode");
             return result;
         }
-        #endregion
+
+        #endregion SendVCode
 
         #region CheckVCode
+
         [WebMethod]
         public string CheckVCode(string callType, string xmlMessage)
         {
@@ -1005,7 +1003,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -1033,9 +1030,11 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "CheckVCode");
             return result;
         }
-        #endregion
+
+        #endregion CheckVCode
 
         #region SaveRegRelationship
+
         [WebMethod]
         public string SaveRegRelationship(string callType, string xmlMessage)
         {
@@ -1047,7 +1046,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode("UpdateRegistration", xmlMessage))
@@ -1083,13 +1081,13 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
+        #endregion SaveRegRelationship
 
         #region UploadImage
+
         [WebMethod]
         public string UploadRegImage(string callType, string xmlMessage)
         {
-
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                            "<" + callType + ">" +
                            "<Result>False</Result>" +
@@ -1098,13 +1096,12 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     RegApplication regApp = new RegApplication();
-                   result = regApp.UploadImage (xmlMessage);
+                    result = regApp.UploadImage(xmlMessage);
                 }
             }
             catch (Exception err)
@@ -1126,13 +1123,14 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "UploadRegImage");
             return result;
         }
-        #endregion
+
+        #endregion UploadImage
 
         #region GetRegImage
+
         [WebMethod]
         public string GetRegImage(string callType, string xmlMessage)
         {
-
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                            "<" + callType + ">" +
                            "<Result>False</Result>" +
@@ -1141,14 +1139,12 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     RegApplication regApp = new RegApplication();
                     result = regApp.GetImage(xmlMessage);
-
                 }
             }
             catch (Exception err)
@@ -1171,14 +1167,13 @@ namespace ydb.WebService
             return result;
         }
 
-        #endregion
-
+        #endregion GetRegImage
 
         #region UploadFile
+
         [WebMethod]
         public string UploadFile(string callType, string xmlMessage)
         {
-
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
                            "<" + callType + ">" +
                            "<Result>False</Result>" +
@@ -1187,7 +1182,6 @@ namespace ydb.WebService
             string logID = Guid.NewGuid().ToString();
             try
             {
-
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
@@ -1215,6 +1209,7 @@ namespace ydb.WebService
             result = iTR.Lib.Common.XML2Json(result, "UploadFile");
             return result;
         }
-        #endregion
+
+        #endregion UploadFile
     }
 }

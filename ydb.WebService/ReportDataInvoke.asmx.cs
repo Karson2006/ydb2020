@@ -295,14 +295,12 @@ namespace ydb.WebService
         {
             string result = @"{{""GetMultiReportJson"":{{ ""Result"":""false"",""Description"":"""",""DataRows"":"""" }} }}";
             string logID = Guid.NewGuid().ToString();
+            FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", "GetMultiReportJson");
             try
             {
-                FileLogger.WriteLog(logID + "|Start:" + JsonMessage, 1, "", "GetMultiReport");
-
                 if (Helper.CheckAuthCode("GetMultiReportJson", JsonMessage, "json"))
                 {
                     string xmlString = iTR.Lib.Common.Json2XML(JsonMessage, "GetData");
-                    FileLogger.WriteLog(logID + "|StartxmlString:" + JsonMessage, 1, "", "GetMultiReport");
                     CallRpt rpt = new CallRpt();
                     result = rpt.GetMultiCallReport(xmlString);
                 }
