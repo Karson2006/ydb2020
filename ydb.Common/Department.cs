@@ -712,7 +712,7 @@ namespace ydb.BLL
 
         #endregion GetTeamMemberList
 
-        public string GetAllMemberIDsByLeaderID(string leaderID)
+        public string GetAllMemberIDsByLeaderID(string leaderID, bool resQuery = false)
         {
             string deptID = "", sql = "";
             deptIDs = "";
@@ -721,11 +721,17 @@ namespace ydb.BLL
             sql = "Select FID from t_Departments Where FIsDeleted =0 and FSupervisorID='" + leaderID + "'";
             SQLServerHelper runner = new SQLServerHelper();
             DataTable dt = runner.ExecuteSql(sql);
-
             foreach (DataRow row in dt.Rows)
             {
                 deptID = row["FID"].ToString();
-                GetAllSbuDeptsByDeptID(deptID);
+                if (resQuery)
+                {
+                    GetResSubsID(deptID);
+                }
+                else
+                {
+                    GetAllSbuDeptsByDeptID(deptID);
+                }
             }
             if (deptIDs.Length > 0)
             {

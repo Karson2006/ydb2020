@@ -280,6 +280,7 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
+            //xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
             string result =
                     @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
                 startdate = "",
@@ -361,6 +362,14 @@ namespace ydb.Report
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = new DataTable();
                 WorkShip workShip = new WorkShip();
+                //下载所有的 直接返回結果
+                if (typeid == "0")
+                {
+                    startDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
+                    endDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[1];
+                    result = DownloadAllReportDate(employeeId, startDate, endDate);
+                    return result;
+                }
                 if (viewmonth.Contains('-'))
                 {
                     year = int.Parse(viewmonth.Split('-')[0]);
@@ -393,8 +402,6 @@ namespace ydb.Report
                 //月-周 准备列的查询格式
                 if (viewtype == "0")
                 {
-                    startDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
-                    endDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
                     //获取月的所有周次序
                     string monthWeeks = Common.GetMonthsWeek(year, int.Parse(viewmonth.Split('-')[1]));
                     foreach (string item in monthWeeks.Split('|'))
@@ -424,7 +431,7 @@ namespace ydb.Report
                 //是周又是部门 列出统计数量
                 else if (viewtype == "1" && querytype == 0)
                 {
-                    employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
+                    employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId, true).Replace("|", "','");
                     //Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(viewweek));
                     //for (int i = 0; i < 7; i++)
                     //{
@@ -441,7 +448,7 @@ namespace ydb.Report
                 //如果不是周的 列出所有拜访医院
                 else
                 {
-                    employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
+                    employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId, true).Replace("|", "','");
                     //Tuple<DateTime, DateTime> monsunTuple = GetMonSunTime(year, int.Parse(viewweek));
                     //for (int i = 0; i < 7; i++)
                     //{
@@ -455,12 +462,7 @@ namespace ydb.Report
                     result = GetAllVisitRecord(employeeId, viewweek, calltype);
                     return result;
                 }
-                //下载所有的 直接返回結果
-                if (typeid == "0")
-                {
-                    result = DownloadAllReportDate(employeeId, startDate, endDate);
-                    return result;
-                }
+
                 //startdate = tupletPerTime.Item1.ToString();
                 //enddate = tupletPerTime.Item2.ToString();
                 if (employeeId.Length == 0)
@@ -489,7 +491,6 @@ namespace ydb.Report
                 {
                     foreach (DataRow item in tupledata.Item2.Rows)
                     {
-                        weekNameList = new List<string>();
                         //foreach (string name in staticNamelist)
                         //{
                         //    weekNameList.Add(name);
@@ -501,22 +502,24 @@ namespace ydb.Report
                             querytype = 0;
                             //根据depid获取管理人员employeeId
                             sql =
-                                "SELECT ti.FName,td.FSupervisorID  FROM yaodaibao.dbo.t_Departments td LEFT JOIN t_Items ti ON td.FID = ti.FID Where td.FIsDeleted =0 and td.FID='" +
-                                item["FID"] + "'";
-                            runner = new SQLServerHelper();
+                                $"SELECT isnull((SELECT top 1 FID FROM yaodaibao.dbo.t_Items WHERE FParentID IN ('{item["FID"]}')),'') as nextdep, ti.FName,td.FSupervisorID  FROM yaodaibao.dbo.t_Departments td LEFT JOIN t_Items ti ON td.FID = ti.FID Where td.FIsDeleted =0 and td.FID='{item["FID"]}'";
+                            // runner = new SQLServerHelper();
                             dt = runner.ExecuteSql(sql);
 
                             //根据部门管理者ID获取当前部门和子部门所有的成员ID
-                            subids = workShip.GetAllMemberIDsByLeaderID(dt.Rows[0]["FSupervisorID"].ToString()).Replace("|", "','");
-
-                            //判断是否还有下级部门
-                            sql = $"SELECT * FROM yaodaibao.dbo.t_Items WHERE FParentID IN ('{item["FID"]}')";
-                            DataTable tempdt = new DataTable();
-                            tempdt = runner.ExecuteSql(sql);
-                            if (tempdt.Rows.Count > 0)
+                            subids = workShip.GetAllMemberIDsByLeaderID(dt.Rows[0]["FSupervisorID"].ToString(), true).Replace("|", "','");
+                            if (!string.IsNullOrEmpty(dt.Rows[0]["nextdep"].ToString()))
                             {
                                 nextdep = "True";
                             }
+                            ////判断是否还有下级部门
+                            //sql = $"SELECT * FROM yaodaibao.dbo.t_Items WHERE FParentID IN ('{item["FID"]}')";
+                            //DataTable tempdt = new DataTable();
+                            //tempdt = runner.ExecuteSql(sql);
+                            //if (tempdt.Rows.Count > 0)
+                            //{
+                            //    nextdep = "True";
+                            //}
                         }
                         else
                         {
@@ -536,7 +539,7 @@ namespace ydb.Report
                         //    //根据天分组
                         //    sql = $" Select FType,  {string.Join(",", showdataList.ToArray()) } From CallActivity t1 where FWeek in ('{string.Join(",", timeList.ToArray())}') and FEmployeeID In('{subids}') Group by FType ";
                         //}
-                        runner = new SQLServerHelper();
+                        // runner = new SQLServerHelper();
                         //统计晨访，夜访....
                         tempTable = runner.ExecuteSql(sql);
                         if (tempTable.Rows.Count == 0)
@@ -630,10 +633,10 @@ namespace ydb.Report
             try
             {
                 //string sql = $"Select t1.FID,Isnull(t2.FName,'') As FInstitutionName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As FTimeString, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FStartTime Desc";
-                string sql = $"Select 'false' statis, t1.FID,Isnull(t2.FName,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As Amount, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FStartTime Desc";
+                string sql = $"Select 'false' statis, t1.FID,Isnull(t2.FName,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 120),16) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 120),16)) As Amount, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FStartTime Desc";
                 if (calltype.Trim() != "")
                 {
-                    sql = $"Select 'false' statis, t1.FID,Isnull(t2.FName,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 108),5) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 108),5)) As Amount, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FStartTime Desc";
+                    sql = $"Select 'false' statis, t1.FID,Isnull(t2.FName,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  (Left(CONVERT(varchar(100), t1.FStartTime, 120),16) +'~' + Left(CONVERT(varchar(100), t1.FEndTime, 120),16)) As Amount, t1.FStartTime As FDate From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FStartTime Desc";
                 }
                 SQLServerHelper runHelper = new SQLServerHelper();
                 DataTable dt = runHelper.ExecuteSql(sql);
@@ -722,19 +725,80 @@ namespace ydb.Report
         /// <returns></returns>
         public string DownloadAllReportDate(string employeeId, string startDate, string endDate)
         {
-            string result = "", sql = "", date1 = "", date2 = "", employeeIds = "";
+            string result = "", sql = "", date1 = "", date2 = "", fileName = "", savePath = "";
             result = "<GetData>" +
                     "<Result>False</Result>" +
                     "<Description></Description>" +
                     "<DataRows></DataRows>" +
                     "</GetData>";
             WorkShip workShip = new WorkShip();
-            //employeeIds = workShip.GetAllMemberIDsByLeaderID(employeeId);
-            sql = $"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName , sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,  Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan  From CallActivity t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID  Left Join t_Items t3 On t1.FEmployeeID = t3.FID   Where FDate between '{startDate}' and  '{endDate}' and FEmployeeID In('{employeeIds}') Group by t3.FName,t2.FName,t1.FEmployeeID  Order by CallCount Desc,TimeSpan Desc";
-
+            employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','"); ;
+            //sql = $"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName , sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,  Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan  From CallActivity t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID  Left Join t_Items t3 On t1.FEmployeeID = t3.FID   Where FDate between '{startDate}' and  '{endDate}' and FEmployeeID In('{employeeIds}') Group by t3.FName,t2.FName,t1.FEmployeeID  Order by CallCount Desc,TimeSpan Desc,FEmployeeID desc";
+            sql = $"Select   Isnull(t4.FName,'') As  姓名,t2.FName,(Left(CONVERT(varchar(100), t1.FStartTime, 120),16) +' 至 ' + Left(CONVERT(varchar(100), t1.FEndTime, 120),160)) As 日期, ISNULL(t1.FType,'') as 拜访类型 From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID left join t_Items t5 on t1.FInstitutionID = t5.FName  where t1.FEmployeeID in ('{employeeId}')  and  FDate between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
             SQLServerHelper runner = new SQLServerHelper();
+            //sql = string.Format(sql, date1, date2, employeeId);
             DataTable dt = runner.ExecuteSql(sql);
-            result = Common.DataTableToXml(dt, "GetData", "", "List");
+            //如果没有数据返回错误
+            if (dt.Rows.Count == 0)
+            {
+                result = @"<GetData>" +
+              "<Result>False</Result>" +
+              "<DataRow><FileURL>" + "无数据可供下载." + "</FileURL></DataRow></GetData>";
+                return result;
+            }
+
+            fileName = Guid.NewGuid().ToString().Replace("-", "");
+            try
+            {
+                //移除列
+                // dt.Columns.Remove("日期");
+                var excel = new Microsoft.Office.Interop.Excel.Application
+                {
+                    DisplayAlerts = false
+                };
+                //生成一个新的工资薄
+                var excelworkBook = excel.Workbooks.Add(Type.Missing);
+                var excelSheet = (Microsoft.Office.Interop.Excel.Worksheet)excelworkBook.ActiveSheet;
+                //获得表的行，列数目
+                int row_num = dt.Rows.Count;
+                int column_num = dt.Columns.Count;
+                //生成一个二维数组
+                object[,] dataArry = new object[row_num, column_num];
+                object[,] headArry = new object[1, column_num];
+                //把表中的数据放到数组中
+                for (int i = 0; i < row_num; i++)
+                {
+                    for (int j = 0; j < column_num; j++)
+                    {
+                        dataArry[i, j] = dt.Rows[i][j].ToString();
+                    }
+                }
+
+                for (int j = 0; j < column_num; j++)
+                {
+                    headArry[0, j] = dt.Columns[j].ColumnName.ToString();
+                }
+                excel.Range[excel.Cells[1, 1], excel.Cells[1, column_num]].Value = headArry;
+                //把数组中的数据放到Excel中
+                excel.Range[excel.Cells[2, 1], excel.Cells[row_num + 1, column_num]].Value = dataArry;
+                string path = System.Configuration.ConfigurationManager.AppSettings["Path"];
+                string fullpath = System.Web.HttpContext.Current.Server.MapPath(path);
+
+                savePath = fullpath + "\\" + fileName + ".xlsx";
+
+                excelworkBook.SaveAs(savePath);
+                excelworkBook.Close();
+                excel.Quit();
+            }
+            catch (Exception err)
+            {
+                result = $@"{{""GetData"":{{ ""Result"":""False"",""Description"":""{ err.Message}"",""DataRow"":"""" }} }}";
+
+                return result;
+            }
+            string url = "http://ydb.tenrypharm.com:6060/Files/" + fileName + ".xlsx";
+            result = $@"{{""GetData"":{{ ""Result"":""True"",""DataRow"":{{""FileURL"":""{url}""}} }} }}";
+
             return result;
         }
 
