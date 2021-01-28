@@ -786,18 +786,38 @@ namespace ydb.BLL
                 deptIDs = deptID;
             SQLServerHelper runner = new SQLServerHelper();
             List<string> subs = new List<string>();
-            string sql = $@" with temp(FID)
-                as
-                (
-            select FID  from t_Items
-            where FParentID = '{deptID}'
-            union all
-                select a.FID  from t_Items a
-                inner join
-                temp b
-            on(b.FID = a.FParentID)
-                )
-            select * from temp";
+            //string sql = $@" with temp(FID)
+            //    as
+            //    (
+            //select FID  from t_Items
+            //where FParentID = '{deptID}'
+            //union all
+            //    select a.FID  from t_Items a
+            //    inner join
+            //    temp b
+            //on(b.FID = a.FParentID)
+            //    )
+            //select * from temp";
+            string sql = $@"IF OBJECT_ID('tempdb..#TempBld') IS NOT NULL DROP TABLE #TempBld
+
+                            Select FID,FParentID,Lev=1
+                             Into  #TempBld
+                             From  t_Items
+                             Where FParentID = '{deptID}'
+
+                            Declare @Cnt int=1
+                            While @Cnt<=10
+                                Begin
+                                    Insert Into #TempBld
+                                    Select A.FID
+                                          ,A.FParentID
+                                          ,B.Lev+1
+                                     From  t_Items A
+                                     Join  #TempBld B on (B.Lev=@Cnt and A.FParentID=B.FID)
+                                    Set @Cnt=@Cnt+1
+                                End
+
+	                            Select FID from #TempBld Order by FID";
             DataTable dt = runner.ExecuteSql(sql);
 
             if (dt.Rows.Count > 0)
