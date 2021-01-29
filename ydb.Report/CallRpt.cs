@@ -280,7 +280,7 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
-            //xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
+            // xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
             string result =
                     @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
                 startdate = "",
@@ -734,7 +734,9 @@ namespace ydb.Report
             WorkShip workShip = new WorkShip();
             employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','"); ;
             //sql = $"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName , sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,  Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan  From CallActivity t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID  Left Join t_Items t3 On t1.FEmployeeID = t3.FID   Where FDate between '{startDate}' and  '{endDate}' and FEmployeeID In('{employeeIds}') Group by t3.FName,t2.FName,t1.FEmployeeID  Order by CallCount Desc,TimeSpan Desc,FEmployeeID desc";
-            sql = $"Select   Isnull(t4.FName,'') As  姓名,t2.FName,(Left(CONVERT(varchar(100), t1.FStartTime, 120),16) +' 至 ' + Left(CONVERT(varchar(100), t1.FEndTime, 120),160)) As 日期, ISNULL(t1.FType,'') as 拜访类型 From [CallActivity] t1 Left Join t_Items t2 On t1.FInstitutionID= t2.FID Left Join t_Items t4 On t1.FEmployeeID= t4.FID left join t_Items t5 on t1.FInstitutionID = t5.FName  where t1.FEmployeeID in ('{employeeId}')  and  FDate between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
+            sql = $@"Select   Isnull(t4.FName,'') As  姓名
+                ,FSubject as 主题,t2.FName as 拜访机构,FClientID as 客户 ,FConcept as 传递理念,t6.FName as 产品名称,FActivity as 总结 , ISNULL(t1.FType, '') as 拜访类型  , (Left(CONVERT(varchar(100), t1.FStartTime, 120), 16)) As 日期 From[CallActivity] t1 Left Join t_Items t2
+                On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID left join t_Items t5 on t1.FInstitutionID = t5.FName left join t_Items t6 on t1.FProductID = t6.FIDwhere t1.FEmployeeID in ('{employeeId}')  and  FDate between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
             SQLServerHelper runner = new SQLServerHelper();
             //sql = string.Format(sql, date1, date2, employeeId);
             DataTable dt = runner.ExecuteSql(sql);
