@@ -816,7 +816,6 @@ namespace ydb.BLL
                                      Join  #TempBld B on (B.Lev=@Cnt and A.FParentID=B.FID)
                                     Set @Cnt=@Cnt+1
                                 End
-
 	                            Select FID from #TempBld Order by FID";
             DataTable dt = runner.ExecuteSql(sql);
 

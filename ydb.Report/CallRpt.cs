@@ -11,6 +11,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
+using System.Security.RightsManagement;
 using System.Web.Services;
 using System.Web;
 using Microsoft.SqlServer.Server;
@@ -822,5 +823,20 @@ namespace ydb.Report
             sunTime = sunTime.AddDays((week - 1) * 7);
             return new Tuple<DateTime, DateTime>(monTime, sunTime);
         }
+
+        #region 获取展示图标
+
+        public string GetMenuList(string jsonMessage)
+        {
+            string result = "<GetData>" +
+                            "<Result>False</Result>" +
+                            "<Description></Description>" +
+                            "<DataRows></DataRows>" +
+                            "</GetData>";
+            result = $@"{{""GetData"":{{ ""Result"":""True"",""DataRow"":{{""Icon"":""1|2|3|6""}} }} }}";
+            return result;
+        }
+
+        #endregion 获取展示图标
     }
 }
