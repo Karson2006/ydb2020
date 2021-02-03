@@ -744,9 +744,7 @@ namespace ydb.Report
             //如果没有数据返回错误
             if (dt.Rows.Count == 0)
             {
-                result = @"<GetData>" +
-              "<Result>False</Result>" +
-              "<DataRow><FileURL>" + "无数据可供下载." + "</FileURL></DataRow></GetData>";
+                result = @"{""GetData"":{""Result"":""False"",""DataRow"":{""FileURL"":""无数据可供下载.""}}}";
                 return result;
             }
 
