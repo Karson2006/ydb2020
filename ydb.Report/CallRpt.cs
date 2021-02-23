@@ -14,6 +14,7 @@ using System.Globalization;
 using System.Security.RightsManagement;
 using System.Web.Services;
 using System.Web;
+using System.Web.UI.WebControls;
 using Microsoft.SqlServer.Server;
 using Newtonsoft.Json;
 
@@ -409,11 +410,20 @@ namespace ydb.Report
                     {
                         if (!string.IsNullOrEmpty(item))
                         {
-                            columnname.Add(year + "-" + item);
-                            timeList.Add($"{year}-{item}");
-                            weekNameList.Add($@"""{year}-第{item}周""");
-                            showdataList.Add($"Sum(Case FWeek When '{year + "-" + item}' Then 1 Else 0 End) AS '{year + "-" + item}'");
-                            Sumlist.Add($"Sum(Case FWeek When '{year + "-" + item}' Then 1 Else 0 End)");
+                            //todo:拼接签到的查询条件
+                            if (datatype == "call")
+                            {
+                                columnname.Add(year + "-" + item);
+                                timeList.Add($"{year}-{item}");
+                                weekNameList.Add($@"""{year}-第{item}周""");
+                                showdataList.Add($"Sum(Case FWeek When '{year + "-" + item}' Then 1 Else 0 End) AS '{year + "-" + item}'");
+                                Sumlist.Add($"Sum(Case FWeek When '{year + "-" + item}' Then 1 Else 0 End)");
+                            }
+                            else
+                            {
+                                //todo:获取这周的周一和周日的日期
+                                Tuple<DateTime, DateTime> weektimeTuple = GetMonSunTime(year, int.Parse(item));
+                            }
                         }
                     }
                     ////如果是部门没有下级直接返回
@@ -724,7 +734,7 @@ namespace ydb.Report
         /// </summary>
         /// <param name="employeeId">人员ID</param>
         /// <returns></returns>
-        public string DownloadAllReportDate(string employeeId, string startDate, string endDate)
+        public string DownloadAllReportDate(string employeeId, string startDate, string endDate, string downloadType = "call")
         {
             string result = "", sql = "", date1 = "", date2 = "", fileName = "", savePath = "";
             result = "<GetData>" +
@@ -735,9 +745,20 @@ namespace ydb.Report
             WorkShip workShip = new WorkShip();
             employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','"); ;
             //sql = $"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName , sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,  Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan  From CallActivity t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID  Left Join t_Items t3 On t1.FEmployeeID = t3.FID   Where FDate between '{startDate}' and  '{endDate}' and FEmployeeID In('{employeeIds}') Group by t3.FName,t2.FName,t1.FEmployeeID  Order by CallCount Desc,TimeSpan Desc,FEmployeeID desc";
-            sql = $@"Select   Isnull(t4.FName,'') As  姓名
+
+            if (downloadType == "call")
+            {
+                sql = $@"Select   Isnull(t4.FName,'') As  姓名
                 ,FSubject as 主题,t2.FName as 拜访机构,FClientID as 客户 ,FConcept as 传递理念,t6.FName as 产品名称,FActivity as 总结 , ISNULL(t1.FType, '') as 拜访类型  , (Left(CONVERT(varchar(100), t1.FStartTime, 120), 16)) As 日期 From[CallActivity] t1 Left Join t_Items t2
                 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID left join t_Items t5 on t1.FInstitutionID = t5.FName left join t_Items t6 on t1.FProductID = t6.FID  where  t1.FEmployeeID in ('{employeeId}')  and  FDate between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
+            }
+            else if (downloadType == "signin")
+            {
+                sql = $@"Select   Isnull(t4.FName,'') As  姓名,t1.FSignInAddress 签到地址,FSignInTime 签到时间
+                From [RouteData] t1 Left Join t_Items t2
+                On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID
+				left join t_Items t5 on t1.FInstitutionID = t5.FName where  t1.FEmployeeID in ('{employeeId}')  and  FDate between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
+            }
             SQLServerHelper runner = new SQLServerHelper();
             //sql = string.Format(sql, date1, date2, employeeId);
             DataTable dt = runner.ExecuteSql(sql);
@@ -757,7 +778,7 @@ namespace ydb.Report
                 {
                     DisplayAlerts = false
                 };
-                //生成一个新的工资薄
+                //生成一个新的工作薄
                 var excelworkBook = excel.Workbooks.Add(Type.Missing);
                 var excelSheet = (Microsoft.Office.Interop.Excel.Worksheet)excelworkBook.ActiveSheet;
                 //获得表的行，列数目
@@ -836,5 +857,14 @@ namespace ydb.Report
         }
 
         #endregion 获取展示图标
+
+        #region 签到多级数据汇总
+
+        public string RouteMultiple()
+        {
+            return "";
+        }
+
+        #endregion 签到多级数据汇总
     }
 }
