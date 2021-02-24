@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data;
+using System.Globalization;
 using iTR.Lib;
 using System.Xml;
 
@@ -261,6 +262,7 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(dataString);
                 id = doc.SelectSingleNode("UpdateRouteData/RouteID").InnerText;
+
                 if (id.Trim() == "" || id.Trim() == "-1")//新增
                 {
                     id = Guid.NewGuid().ToString();
@@ -268,7 +270,6 @@ namespace ydb.BLL
                     if (runner.ExecuteSqlNone(sql) < 0)//插入失败
                         throw new Exception("新增失败");
                 }
-
                 //更新日程信息
                 XmlNode vNode = doc.SelectSingleNode("UpdateRouteData/EmployeeID");
                 string val = "";
@@ -278,7 +279,13 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FEmployeeID='" + val + "',";
                 }
-
+                vNode = doc.SelectSingleNode("UpdateRouteData/FType");
+                if (vNode != null)
+                {
+                    val = vNode.InnerText;
+                    if (val.Trim().Length > 0)
+                        valueString = valueString + "FType='" + val + "',";
+                }
                 vNode = doc.SelectSingleNode("UpdateRouteData/Date");
                 if (vNode != null)
                 {
@@ -392,7 +399,10 @@ namespace ydb.BLL
                         throw new Exception("更新失败");
                     else
                     {
-                        sql = "Update RouteData Set FSignInTime = CONVERT(varchar(100),FDate,23)+' ' + CONVERT(varchar(100),FSignInTime, 8),FSignOutTime= CONVERT(varchar(100),FSignOutDate,23)+' ' + CONVERT(varchar(100),FSignOutTime, 8) ";
+                        int year, weekOfyear;
+
+                        Common.GetWeekIndexOfYear("0", out year, out weekOfyear);
+                        sql = $"Update RouteData Set FWeek='{DateTime.Now.Year + "-" + weekOfyear}',FMonth='{DateTime.Now.ToString("yyyy-MM")}', FSignInTime = CONVERT(varchar(100),FDate,23)+' ' + CONVERT(varchar(100),FSignInTime, 8),FSignOutTime= CONVERT(varchar(100),FSignOutDate,23)+' ' + CONVERT(varchar(100),FSignOutTime, 8) ";
                         sql = sql + " Where FID='" + id + "'";
                         runner.ExecuteSqlNone(sql);
                     }
@@ -540,6 +550,8 @@ namespace ydb.BLL
                 xmlString = doc.OuterXml;
                 xmlString = xmlString.Replace("SignIn>", "UpdateRouteData>");//替换为UpdateRouteData
                 result = Update(xmlString);
+
+                runer.ExecuteSqlNone(sql);
                 if (result != "-1")//签入成功
                     result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><SignIn>" +
                                 "<Result>True</Result>" +
