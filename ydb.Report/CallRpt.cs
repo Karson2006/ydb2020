@@ -377,7 +377,7 @@ namespace ydb.Report
                 {
                     startDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[0];
                     endDate = Common.GetMonthTime(Convert.ToDateTime(viewmonth)).Split('&')[1];
-                    result = DownloadAllReportDate(employeeId, startDate, endDate);
+                    result = DownloadAllReportDate(employeeId, startDate, endDate, datatype);
                     return result;
                 }
                 if (viewmonth.Contains('-'))
@@ -449,8 +449,6 @@ namespace ydb.Report
                         result = GetAllVisitAmount(employeeId, viewweek, calltype);
                     }
                     else if (datatype == "2")
-                    {
-                    }
                     {
                         result = GetAllVisitAmount(employeeId, viewweek, calltype, "RouteData");
                     }
@@ -637,10 +635,10 @@ namespace ydb.Report
                 }
                 else if (querytype == "RouteData")
                 {
-                    sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignInTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FStartTime Desc";
+                    sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignInTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FSignInTime Desc";
                     if (calltype.Trim() != "")
                     {
-                        sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignInTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FStartTime Desc";
+                        sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignInTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FSignInTime Desc";
                     }
                 }
 
@@ -729,7 +727,7 @@ namespace ydb.Report
         /// </summary>
         /// <param name="employeeId">人员ID</param>
         /// <returns></returns>
-        public string DownloadAllReportDate(string employeeId, string startDate, string endDate, string downloadType = "call")
+        public string DownloadAllReportDate(string employeeId, string startDate, string endDate, string downloadType = "1")
         {
             string result = "", sql = "", date1 = "", date2 = "", fileName = "", savePath = "";
             result = "<GetData>" +
@@ -741,13 +739,13 @@ namespace ydb.Report
             employeeId = workShip.GetAllMemberIDsByLeaderID(employeeId).Replace("|", "','");
             //sql = $"  Select t3.FName As EmployeeName, t1.FEmployeeID As EmployeeID,t2.FName As InstitutionName , sum(Case FScheduleID When '4484030a-28d1-4e5e-ba72-6655f1cb2898' Then 1 Else 0 End) AS UnplanedCallCount,  Sum(1) AS CallCount,SUM(ISNULL(DATEDIFF(mi, t1.FStartTime, t1.FEndTime), 0)) AS TimeSpan  From CallActivity t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID  Left Join t_Items t3 On t1.FEmployeeID = t3.FID   Where FDate between '{startDate}' and  '{endDate}' and FEmployeeID In('{employeeIds}') Group by t3.FName,t2.FName,t1.FEmployeeID  Order by CallCount Desc,TimeSpan Desc,FEmployeeID desc";
 
-            if (downloadType == "call")
+            if (downloadType == "1")
             {
                 sql = $@"Select   Isnull(t4.FName,'') As  姓名
                 ,FSubject as 主题,t2.FName as 拜访机构,FClientID as 客户 ,FConcept as 传递理念,t6.FName as 产品名称,FActivity as 总结 , ISNULL(t1.FType, '') as 拜访类型  , (Left(CONVERT(varchar(100), t1.FStartTime, 120), 16)) As 日期 From[CallActivity] t1 Left Join t_Items t2
                 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID left join t_Items t5 on t1.FInstitutionID = t5.FName left join t_Items t6 on t1.FProductID = t6.FID  where  t1.FEmployeeID in ('{employeeId}')  and  FDate between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
             }
-            else if (downloadType == "signin")
+            else if (downloadType == "2")
             {
                 sql = $@"Select   Isnull(t4.FName,'') As  姓名,t1.FSignInAddress 签到地址,FSignInTime 签到时间
                 From [RouteData] t1 Left Join t_Items t2
