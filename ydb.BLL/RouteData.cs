@@ -705,31 +705,75 @@ namespace ydb.BLL
                 "<Result>True</Result>" +
                 "<Description>" + result + "<Description/>" +
                 "</AutoRoute>";
-                double meter = GetDistance(121.421861, 31.186788, double.Parse(doc.SelectSingleNode("AutoRoute/SignInLng").InnerText), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLat").InnerText));
-                //自动签退
-                sql = "Select FID from RouteData Where FEmployeeID='" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText + "'";
+                //根据EmployeeID获取签到地址
+                sql = $"  SELECT sch.FID, isnull(hos.FLatitude,'') FLatitude,isnull(hos.FLongitude,'') FLongitude,item.FName FROM [yaodaibao].[dbo].[Schedule] sch left join [dbo].[t_Hospital] hos on sch.FID = hos.FID left join  [dbo].[t_Items] item on sch.FInstitutionID = item.FID  where sch.FEmployeeID = '{employeeId}' ";
+
+                DataTable tbmeter = runner.ExecuteSql(sql);
+                int meter = 1000;
+                //避免有可以同时签到的位置 保存签到ID和签到的地址名称
+                Dictionary<string, int> dicDistance = new Dictionary<string, int>();
+                foreach (DataRow row in tbmeter.Rows)
+                {
+                    //############## 签到地址
+                    meter = (int)GetDistance(double.Parse(row["FLongitude"].ToString()), double.Parse(row["FLatitude"].ToString()), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLng").InnerText.Replace("-", "")), double.Parse(doc.SelectSingleNode("AutoRoute/SignInLat").InnerText.Replace("-", "")));
+
+                    //比较当前位置和签到地址距离 "-" 移除意外字符
+
+                    dicDistance.Add(row["FID"].ToString(), meter);
+                }
+
+                //查找需要签退的地址
+                sql = "Select FID,[FSignOutTime] from RouteData Where FEmployeeID='" + doc.SelectSingleNode("AutoRoute/EmployeeID").InnerText + "'";
                 sql = sql + " And FDate between '" + DateTime.Now.ToString("yyyy-MM-dd") + " 0:0:0.000' And '" + DateTime.Now.ToString("yyyy-MM-dd") + " 23:59:59.999'";
                 sql = sql + " And FSignOutAddress=''";
-                //<SignInLat>31.186815</SignInLat><SignInLng>121.42179</SignInLng>
-                DataTable tb = runner.ExecuteSql(sql);
-                //大于300
-                if (meter > 200)
+                DataTable tbsign = runner.ExecuteSql(sql);
+                if (tbsign.Rows.Count > 0)//存在未签退的签到记录,自动签退
                 {
-                    if (tb.Rows.Count > 0)//存在未签退的签到记录,自动签退
+                    if (0 < dicDistance.Count)
                     {
-                        sql = $"Update RouteData Set FSignOutAddress ='签退地址',FSignOutDate='{fDate}',FSignOutTime='{signTime}',FSignOutLat={lat},FSignOutLng={lng},[FDistance] = {(int)meter} where FID ='{tb.Rows[0]["FID"]}'";
-                        runner.ExecuteSqlNone(sql);
+                        //根据ID查找签退距离 RouteData FID 和 schedule FID 是相同FID
+                        meter = dicDistance.FirstOrDefault(x => x.Key == tbmeter.Rows[0]["FID"].ToString()).Value;
+                        //大于200签退
+                        if (meter > 200)
+                        {
+                            DataRow row = tbmeter.Rows.Find(tbmeter.Rows[0]["FID"]);
+                            sql = $"Update RouteData Set FSignOutAddress ='{row["FName"]}',FSignOutDate='{fDate}',FSignOutTime='{signTime}',FSignOutLat={lat},FSignOutLng={lng},[FDistance] = {meter} where FID ='{tbmeter.Rows[0]["FID"]}'";
+                            runner.ExecuteSqlNone(sql);
+                        }
                     }
                 }
-                //小于300判断是签到
+                //签到
                 else
                 {
-                    if (tb.Rows.Count == 0)//没有要签退的记录，自动签到
+                    //先过滤小于200的签到地址 再排序签到地址
+                    dicDistance = dicDistance.Where(x => x.Value < 200).ToDictionary(x => x.Key, x => x.Value);
+                    dicDistance = dicDistance.OrderBy(o => o.Value).ToDictionary(o => o.Key, o => o.Value);
+                    if (0 < dicDistance.Count)
                     {
-                        var nullvalue = DBNull.Value;
-                        //sql = "insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('"+Guid.NewGuid()+"','"+employeeId+"','宏汇国际广场','"+fDate+"','"+signTime+"',NULL,'"+lat+"','"+lng+"',"+(int)meter+")";
-                        sql = $"insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('{Guid.NewGuid()}','{employeeId}','宏汇国际广场','{fDate}','{signTime}',NULL,'{lat}','{lng}',{(int)meter})";
-                        runner.ExecuteSqlNone(sql);
+                        //赋值签退地址
+                        meter = dicDistance.Values.First();
+                        //小于200签到
+                        if (meter < 200)
+                        {
+                            //先查找签到最后一次的签到记录时间
+                            sql = $"SELECT TOP 1 [FSignOutTime] FROM [yaodaibao].[dbo].[RouteData]  where FEmployeeID = '{employeeId}' order by FSignOutTime desc";
+                            tbsign = runner.ExecuteSql(sql);
+                            if (0 < tbsign.Rows.Count)
+                            {
+                                //签退之后一定不直接签到 间隔10秒，为了前端异步请求问题
+                                DateTime temptime = Convert.ToDateTime(tbsign.Rows[0]["FSignOutTime"]).AddSeconds(20);
+                                if (0 < DateTime.Compare(DateTime.Now, temptime))
+                                {
+                                    //设置第一列为主键
+                                    tbmeter.PrimaryKey = new DataColumn[] { tbmeter.Columns[0] };
+                                    //根据ID获取签到点名称
+                                    DataRow row = tbmeter.Rows.Find(dicDistance.Keys.First());
+                                    var nullvalue = DBNull.Value;
+                                    sql = $"insert into RouteData ([FID],[FEmployeeID],[FSignInAddress],[FDate],[FSignInTime],[FSignOutTime],[FSignInLat],[FSignInLng],[FDistance]) values('{Guid.NewGuid()}','{employeeId}','{row["FName"]}','{fDate}','{signTime}',NULL,'{lat}','{lng}',{meter})";
+                                    runner.ExecuteSqlNone(sql);
+                                }
+                            }
+                        }
                     }
                 }
 
