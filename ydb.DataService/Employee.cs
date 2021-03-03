@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using iTR.Lib;
-using  System.Data;
+using System.Data;
 using ydb.BLL;
 using System.Xml;
 
@@ -14,19 +14,18 @@ namespace ydb.DataService
     {
         private string sql = "";
         private DataTable dt = null;
-        SQLServerHelper runner = null;
-        XmlDocument doc = null;
+        private SQLServerHelper runner = null;
+        private XmlDocument doc = null;
+
         public Employee()
         {
             runner = new SQLServerHelper(DataHelper.CnnString);
             doc = new XmlDocument();
-
         }
+
         public string Upload(DataTable employeeData)
         {
             string result = "";
-            
-            
 
             try
             {
@@ -34,7 +33,8 @@ namespace ydb.DataService
                 {
                     if (dr["FUploadOption"].ToString() == "1")//选择了上传的才上传
                     {
-                        #region  XMLString
+                        #region XMLString
+
                         string xmlString = @"<UpdateEmployee>
 	                                <AuthCode>1d340262-52e0-413f-b0e7-fc6efadc2ee5</AuthCode>
 	                                <FClassID>63de6d24-41cc-4471-8876-90a765aa1614</FClassID>
@@ -52,7 +52,8 @@ namespace ydb.DataService
 	                                <FIDNumber>{10}</FIDNumber>
                                     <Action>{11}</Action>
                                 </UpdateEmployee>";
-                        #endregion
+
+                        #endregion XMLString
 
                         xmlString = string.Format(xmlString, dr["FID"].ToString(), dr["FEmployeeName"].ToString(), dr["FEmployeeNumber"].ToString(),
                                                             dr["FDeptID"].ToString(), dr["FSortIndex"].ToString(), dr["FPositionID"].ToString(),
@@ -73,60 +74,61 @@ namespace ydb.DataService
                             }
                             else
                             {
-                                sql = "Update [DataService].[dbo].[YDBEmployee] Set FDeptID='{0}',FDeptName='{1}',FPositionID='{2}',FPositionName='{3}' Where FID='{4}'";
-                                sql = string.Format(sql, dr["FDeptID"].ToString(), dr["FDeptName"].ToString(), dr["FPositionID"].ToString(), dr["FPositionName"].ToString(),dr["FID"].ToString());
+                                sql = "Update [DataService].[dbo].[YDBEmployee] Set FDeptID='{0}',FDeptName='{1}',FPositionID='{2}',FPositionName='{3}' ,FMobile='{5}' , FTID='{6}' Where FID='{4}'";
+                                sql = string.Format(sql, dr["FDeptID"].ToString(), dr["FDeptName"].ToString(), dr["FPositionID"].ToString(), dr["FPositionName"].ToString(), dr["FID"].ToString(), dr["FMobile"].ToString(), dr["FTID"].ToString());
                             }
                             runner.ExecuteSqlNone(sql);
-                           
+                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='1'";
+                            runner.ExecuteSql(sql);
                         }
                         else
                         {
-                            throw new Exception(doc.SelectSingleNode("UpdateEmployee/Description").InnerText.Trim());
+                            // throw new Exception(doc.SelectSingleNode("UpdateEmployee/Description").InnerText.Trim());
+                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='-1'";
+                            runner.ExecuteSql(sql);
                         }
                     }
                 }
             }
-
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <returns></returns>
-        public DataTable  GetUploadDataFromOA()
+        public DataTable GetUploadDataFromOA()
         {
             DataTable dtEmployee = null;
 
             sql = @"Delete from [DataService].dbo.OAEmployee";
             runner.ExecuteSqlNone(sql);
             //将OA数据库中所有FTID（工号+职位+部门）在YRB中没有的提取处理（可能是新增或有变化的）
-            sql = @"Insert Into [DataService].dbo.OAEmployee(FID,FEmployeeName,FEmployeeNumber,FPositionName,FPositionID,FDeptID,FDeptName,FTID,FStatus,FMobile)  
+            sql = @"Insert Into [DataService].dbo.OAEmployee(FID,FEmployeeName,FEmployeeNumber,FPositionName,FPositionID,FDeptID,FDeptName,FTID,FStatus,FMobile)
                     Select  cast(t1.ID as nvarchar(50)) As FID,t1.Name As FEmployeeName,t1.Code As FEmployeeNumber,t2.NAME As FPositionName,t1.ORG_POST_ID AS FPositionID,
-                    cast(t1.ORG_DEPARTMENT_ID As nvarchar(50)) As FDeptID,t3.NAME As FDeptName,(t1.Code+t2.NAME+t3.NAME) AS FTID, '1' As FStatus,t1.EXT_ATTR_1 As FMobile
+                    cast(t1.ORG_DEPARTMENT_ID As nvarchar(50)) As FDeptID,t3.NAME As FDeptName,(t1.Code+'|'+cast(t1.ORG_POST_ID As nvarchar(50)) +'|'+cast(t1.ORG_DEPARTMENT_ID As nvarchar(50))+'|'+t1.EXT_ATTR_1) AS FTID, '1' As FStatus,t1.EXT_ATTR_1 As FMobile
                     From ORG_MEMBER t1
                     Left Join ORG_POST t2 on t1.ORG_POST_ID= t2.ID
                     Left Join ORG_UNIT t3 on t1.ORG_DEPARTMENT_ID= t3.ID
-                    Where t1.IS_DELETED=0 and state= 1 and Left(t3.PATH,16)='0000000100220005' 
+                    Where t1.IS_DELETED=0 and state= 1 and Left(t3.PATH,16)='0000000100220005'
                     and (t1.Code+t2.NAME+t3.NAME)  Not In(Select  FTID from [DataService].dbo.[YDBEmployee]) and t1.ORG_POST_ID<>-1549616942846885069";
 
             runner.ExecuteSqlNone(sql);
             sql = @" Select *,'0' As FSortIndex,'0' As FIsAgency,'' As FIDNumber,'' As FTypeID,'0' As FUploadOption from  [DataService].dbo.OAEmployee";
-            dtEmployee = runner.ExecuteSql(sql); 
-            foreach(DataRow dr in dtEmployee.Rows)
+            dtEmployee = runner.ExecuteSql(sql);
+            foreach (DataRow dr in dtEmployee.Rows)
             {
                 sql = " Select FEmployeeNumber From [DataService].dbo.YDBEmployee Where FEmployeeNumber='{0}'";
                 sql = string.Format(sql, dr["FEmployeeNumber"].ToString());
                 dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)//在YRB数据中已有相应的工号，则为修改
                     dr["FStatus"] = 2;
-
             }
-            return dtEmployee; 
+            return dtEmployee;
         }
     }
-    
 }
