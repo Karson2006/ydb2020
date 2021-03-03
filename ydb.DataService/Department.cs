@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using iTR.Lib;
-using  System.Data;
+using System.Data;
 using ydb.BLL;
 using System.Xml;
 
@@ -14,30 +14,27 @@ namespace ydb.DataService
     {
         private string sql = "";
         private DataTable dt = null;
-        SQLServerHelper runner = null;
-        XmlDocument doc = null;
+        private SQLServerHelper runner = null;
+        private XmlDocument doc = null;
+
         public Department()
         {
             runner = new SQLServerHelper(DataHelper.CnnString);
             doc = new XmlDocument();
-
         }
+
         public string Upload(DataTable dt)
         {
             string result = "";
-            
-            
-           
-           
 
             try
             {
-
                 foreach (DataRow dr in dt.Rows)
                 {
                     if (dr["FUploadOption"].ToString() == "1")//选择了上传的才上传
                     {
-                        #region  XMLString
+                        #region XMLString
+
                         string xmlString = @"<UpdateDepartment>
 	                                <AuthCode>1d340262-52e0-413f-b0e7-fc6efadc2ee5</AuthCode>
 	                                <FClassID>d8dbcc3f-dc92-4695-9542-a2ac4f00c162</FClassID>
@@ -49,7 +46,9 @@ namespace ydb.DataService
 	                                <FSupervisorID>{5}</FSupervisorID>
                                     <Action>{6}</Action>
                                 </UpdateDepartment>";
-                        #endregion
+
+                        #endregion XMLString
+
                         xmlString = string.Format(xmlString, dr["FDeptID"].ToString(), dr["FDeptName"].ToString(), dr["FDeptNumber"].ToString(),
                                                             dr["FParentID"].ToString(), 0, dr["FSupervisorID"].ToString(), dr["FAction"].ToString());
 
@@ -66,30 +65,34 @@ namespace ydb.DataService
                             }
                             else
                             {
-                                sql = "Update [DataService].[dbo].[YDBDepartment] Set FParentID='{0}',FParentName ='{1}',FSupervisorID='{2}',FSupervisorName='{3}' Where FDeptID='{4}'";
-                                sql = string.Format(sql, dr["FParentID"].ToString(), dr["FParentName"].ToString(), dr["FSupervisorID"].ToString(), dr["FSupervisorName"].ToString(), dr["FDeptID"].ToString());
+                                sql = "Update [DataService].[dbo].[YDBDepartment] Set FParentID='{0}',FParentName ='{1}',FSupervisorID='{2}',FSupervisorName='{3}',FTID='{5}' Where FDeptID='{4}'";
+                                sql = string.Format(sql, dr["FParentID"].ToString(), dr["FParentName"].ToString(), dr["FSupervisorID"].ToString(), dr["FSupervisorName"].ToString(), dr["FDeptID"].ToString(), dr["FTID"].ToString());
                             }
                             runner.ExecuteSqlNone(sql);
+                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='1'";
+                            runner.ExecuteSql(sql);
                         }
                         else
                         {
-                            throw new Exception(doc.SelectSingleNode("UpdateDepartment/Description").InnerText.Trim());
+                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='-1'";
+                            runner.ExecuteSql(sql);
+                            //throw new Exception(doc.SelectSingleNode("UpdateDepartment/Description").InnerText.Trim());
                         }
                     }
                 }
             }
-
-            catch(Exception err)
+            catch (Exception err)
             {
                 throw err;
             }
             return result;
         }
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <returns></returns>
-        public DataTable  GetUploadDataFromOA()
+        public DataTable GetUploadDataFromOA()
         {
             DataTable dtDept = null;
 
@@ -99,7 +102,7 @@ namespace ydb.DataService
             sql = @"Insert Into [DataService].dbo.OADepartment(FDeptID,FDeptName,FSupervisorID,FParentID,FLevel,FDeptNumber,FParentName,FSupervisorName,FDetail,FTID)
                     Select t2.ID As FDeptID,t2.Name As FDeptName,t1.field0004 As FSupervisorID,t1.field0005 As FParentID,t1.field0009 As FLevel,
                     t1.field0012 As FDeptNumber,t3.Name As FParentName,t4.Name As FSupervisorName,(Case t1.field0010 When -4875734478274671070 Then 1 else  0 end) AS FDetail,
-                    (t1.field0002+'_'+ t1.field0004+'_'+t1.field0005) As FTID 
+                    (t1.field0002+'_'+ t1.field0004+'_'+t1.field0005) As FTID
                     From formmain_5499 t1
                     Left Join ORG_UNIT t2 On t1.field0002= t2.ID
                     Left Join ORG_UNIT t3 On t1.field0005= t3.ID
@@ -110,15 +113,14 @@ namespace ydb.DataService
             runner.ExecuteSqlNone(sql);
             sql = @" Select *,'0' As FUploadOption,'1' As FAction from  [DataService].dbo.OADepartment";
             dtDept = runner.ExecuteSql(sql);
-            foreach(DataRow dr in dtDept.Rows)
+            foreach (DataRow dr in dtDept.Rows)
             {
                 sql = "Select FDeptID from [DataService].dbo.YDBDepartment Where  FDeptID ='" + dr["FDeptID"].ToString() + "'";
                 DataTable dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)
                     dr["FAction"] = 2;
             }
-            return dtDept; 
+            return dtDept;
         }
     }
-    
 }
