@@ -282,7 +282,7 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
-            // xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
+            //xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
             string result =
                     @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
                 startdate = "",
@@ -598,8 +598,12 @@ namespace ydb.Report
                                 weekNameList.Remove(name);
                             }
                         }
-
-                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"", ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                        List<string> widthList = new List<string>() { "100" };
+                        for (int i = 0; i < weekNameList.Count; i++)
+                        {
+                            widthList.Add("100");
+                        }
+                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[{string.Join(",", widthList.ToArray())}], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                     }
                 }
 
