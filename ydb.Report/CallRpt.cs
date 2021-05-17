@@ -282,7 +282,7 @@ namespace ydb.Report
 
         public string GetMultiCallReport(string xmlString)
         {
-            //xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
+            xmlString = iTR.Lib.Common.Json2XML(xmlString, "GetData");
             string result =
                     @"{ { ""GetMultiReportJson"":{ { ""Result"":""false"",""Description"":"""",""DataRows"":"""" } } } }  ",
                 startdate = "",
@@ -300,7 +300,9 @@ namespace ydb.Report
                 id = "",
                 datatype = "";
             int querytype = -1, year;
+            int filteryear, filterweekOfyear;
 
+            Common.GetWeekIndexOfYear("0", out filteryear, out filterweekOfyear);
             XmlDocument doc = new XmlDocument();
             try
             {
@@ -416,6 +418,15 @@ namespace ydb.Report
                     string monthWeeks = Common.GetMonthsWeek(year, int.Parse(viewmonth.Split('-')[1]));
                     foreach (string item in monthWeeks.Split('|'))
                     {
+                        //过滤未来周
+                        if (filteryear == year)
+                        {
+                            if (filterweekOfyear < int.Parse(item))
+                            {
+                                continue;
+                            }
+                        }
+
                         if (!string.IsNullOrEmpty(item))
                         {
                             columnname.Add(year + "-" + item);
@@ -563,15 +574,15 @@ namespace ydb.Report
 
                         List<string> removeNameList = new List<string>();
 
-                        foreach (var column in tempTable.Columns.Cast<DataColumn>().ToArray())
-                        {
-                            if (tempTable.AsEnumerable().All(dr => dr[column.ColumnName].ToString() == "0"))
-                            {
-                                removeNameList.Add("\"" + column.ColumnName.Replace("-", "-第") + "周" + "\"");
-                                tempTable.Columns.Remove(column.ColumnName);
-                            }
-                        }
-
+                        //过滤空值列
+                        //foreach (var column in tempTable.Columns.Cast<DataColumn>().ToArray())
+                        //{
+                        //    if (tempTable.AsEnumerable().All(dr => dr[column.ColumnName].ToString() == "0"))
+                        //    {
+                        //        removeNameList.Add("\"" + column.ColumnName.Replace("-", "-第") + "周" + "\"");
+                        //        tempTable.Columns.Remove(column.ColumnName);
+                        //    }
+                        //}
                         //给定格式
                         foreach (DataRow row in tempTable.Rows)
                         {
@@ -598,12 +609,22 @@ namespace ydb.Report
                                 weekNameList.Remove(name);
                             }
                         }
+
                         List<string> widthList = new List<string>() { "100" };
                         for (int i = 0; i < weekNameList.Count; i++)
                         {
                             widthList.Add("100");
                         }
-                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[{string.Join(",", widthList.ToArray())}], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                        List<string> viewweekList = new List<string>();
+
+                        for (int i = 0; i < weekNameList.Count; i++)
+                        {
+                            weekNameList[i] = weekNameList[i].Replace("第", "").Replace("周", "");
+                            Tuple<DateTime, DateTime> times = GetMonSunTime(int.Parse(weekNameList[i].Split('-')[0].Replace("\"", "")),
+                                int.Parse(weekNameList[i].Split('-')[1].Replace("\"", "")));
+                            viewweekList.Add($@"""{times.Item1.Month + "/" + times.Item1.Day + "~" + times.Item2.Month + "/" + times.Item2.Day }""");
+                        }
+                        subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[{string.Join(",", widthList.ToArray())}],""viewweek"":[""类型"",{string.Join(",", viewweekList.ToArray())}], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                     }
                 }
 
@@ -639,10 +660,10 @@ namespace ydb.Report
                 }
                 else if (querytype == "RouteData")
                 {
-                    sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignInTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FSignInTime Desc";
+                    sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignOutTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') Order by t1.FSignInTime Desc";
                     if (calltype.Trim() != "")
                     {
-                        sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignInTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FSignInTime Desc";
+                        sql = $"Select 'false' statis, t1.FID,Isnull(t1.FSignInAddress,'') As FName,'' As  FClientName,Isnull(t4.FName,'') As  FEmployeeName,  Left(CONVERT(varchar(100), t1.FSignInTime, 120), 16) As Amount, t1.FSignOutTime As FDate From RouteData t1 Left Join t_Items t2 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID  where t1.FEmployeeID in ('{employeeId}')  and FWeek in ('{weekindex}') and  t1.FType IN ('{calltype}') Order by t1.FSignInTime Desc";
                     }
                 }
 
@@ -751,10 +772,17 @@ namespace ydb.Report
             }
             else if (downloadType == "2")
             {
-                sql = $@"Select   Isnull(t4.FName,'') As  姓名,t1.FSignInAddress 签到地址,FSignInTime 签到时间
-                From [RouteData] t1 Left Join t_Items t2
+                sql = $@"Select [FDept_2] as 销售总部
+                      ,[FDept_3] as 大区
+                      ,[FDept_4] as 省区
+                      ,ISNULL([FDept_5],'') as  地区,Isnull(t4.FName,'') As  姓名,t1.FSignInAddress 签到地址, FSignInTime 签到时间,FSignOutTime 签退时间,FRemark 备注,[FDistance]  as 签到签退距离
+                      ,[FType] as 类型
+                      ,[FWeek] as 周
+                      ,[FMonth] as 月份
+
+                From [yaodaibao].[dbo].[RouteData_His] t1 Left Join t_Items t2
                 On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID
-				left join t_Items t5 on t1.FInstitutionID = t5.FName where  t1.FEmployeeID in ('{employeeId}')  and  FDate between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
+				left join t_Items t5 on t1.FInstitutionID = t5.FName where  t1.FEmployeeID in ('{employeeId}')  and  FSignInTime between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
             }
             SQLServerHelper runner = new SQLServerHelper();
             //sql = string.Format(sql, date1, date2, employeeId);

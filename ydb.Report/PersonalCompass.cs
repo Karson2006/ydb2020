@@ -18,7 +18,7 @@ namespace ydb.Report
             //初始化状态
             //   result = string.Format(FormatResult, callType, "\"False\"", "", "");
             //每个DataRow格式
-            string rowcontent = "{{\"dataSets\":[{{\"values\":[{{ \"value\": {0}, \"label\": \"\"}},{{ \"value\": {1}, \"label\":\"\"}}],\"label\":\"\",\"config\": {2}}}],\"name\": \"{3}\",\"Index\":\"{4}\",\"value\":\"{5}\",\"Count\":\"{6}\",\"startTime\":\"{7}\",\"endTime\":\"{8}\"}}";
+            string rowcontent = "{{\"dataSets\":[{{\"values\":[{{ \"value\": {0}, \"label\": \"\"}},{{ \"value\": {1}, \"label\":\"\"}}],\"label\":\"\",\"config\": {2}}}],\"name\": \"{3}\",\"Index\":\"{4}\",\"value\":\"{5}\",\"Count\":\"{6}\",\"startTime\":\"{7}\",\"endTime\":\"{8}\",\"valid\":\"VALID\",\"invalid\":\"INVALID\"}}";
             //dataString = "{\"FWeekIndex\":\"10\",\"AuthCode\":\"1d340262-52e0-413f-b0e7-fc6efadc2ee5\",\"EmployeeID\":\"4255873149499886263\",\"BeginDate\":\"2020-08-05\",\"EndDate\":\"2020-08-31\"}";
             try
             {
@@ -175,6 +175,9 @@ namespace ydb.Report
                     routeconfig = Common.GetCompassConfigFromXml("Route").Replace("Quot", "\"");
                     //DataRow数据
                     tempresult = string.Format(rowContent, per, (100 - per), routeconfig, viewName, viewType, per + "%", total.ToString(), startTime, endTime);
+                    tempresult = tempresult.Replace("VALID", okcount.ToString());
+
+                    tempresult = tempresult.Replace("INVALID", (total - okcount).ToString());
                 }
                 else
                 {
@@ -195,6 +198,9 @@ namespace ydb.Report
             {
                 throw err;
             }
+            tempresult = tempresult.Replace("VALID", "0");
+
+            tempresult = tempresult.Replace("INVALID", "0");
             return tempresult;
         }
     }
