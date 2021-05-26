@@ -49,6 +49,15 @@ namespace ydb.DataService
             result = invoke.Invoke(WSURL + "OrganizationInvoke.asmx", "OrganizationInvoke", mothed, parm).ToString();
             return result;
         }
+        public static string HospitalDataInvoke(string mothed, string xmlString)
+        {
+            string result = "";
+            string[] parm = new string[] { mothed, xmlString };
+
+            WebInvoke invoke = new WebInvoke();
+            result = invoke.Invoke(WSURL + "ClientInvoke.asmx", "ClientInvoke", mothed, parm).ToString();
+            return result;
+        }
     }
     
     

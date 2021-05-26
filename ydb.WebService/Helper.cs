@@ -17,6 +17,7 @@ namespace ydb.WebService
         { }
 
         #region CheckAuthCode
+
         public static Boolean CheckAuthCode(string callType, string xmlString, string strType = "xml")
         {
             Boolean result = false;
@@ -67,7 +68,7 @@ namespace ydb.WebService
             result = true;
             return result;
         }
-        #endregion
-    }
 
+        #endregion CheckAuthCode
+    }
 }

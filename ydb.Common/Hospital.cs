@@ -11,14 +11,15 @@ namespace ydb.BLL
 {
     public class Hospital
     {
-        Items iClass;
+        private Items iClass;
+
         public Hospital()
         {
             iClass = new Items();
         }
 
-
         #region GetHospitalDetail
+
         public string GetHospitalDetail(string xmlString)
         {
             string result = "";
@@ -43,9 +44,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion GetHospitalDetail
 
         #region GetHospitalList
+
         public string GetHospitalList(string xmlString)
         {
             string result = "", sql = "", filter = " t1.FIsDeleted=0 ", val = "";
@@ -145,7 +148,7 @@ namespace ydb.BLL
                         " Left Join t_Items t7 On t1.FTownID = t7.FID" +
                         " Left Join t_Items t8 On t1.FRevenueLevelID = t8.FID" +
                         " Left Join t_Items t9 On t1.FModeID = t9.FID";
-               if (filter.Length > 0)
+                if (filter.Length > 0)
                     sql = sql + " Where " + filter;
                 sql = sql + " order by t1.FSortIndex Asc";
 
@@ -192,7 +195,7 @@ namespace ydb.BLL
                         vNode = doc.CreateElement("FLevel");
                         vNode.InnerText = row["FLevel"].ToString();
                         cNode.AppendChild(vNode);
-                        
+
                         vNode = doc.CreateElement("FDescription");
                         vNode.InnerText = row["FDescription"].ToString();
                         cNode.AppendChild(vNode);
@@ -300,9 +303,11 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion GetHospitalList
 
         #region GetMyHospitalList
+
         public string GetMyHospitalList(string employeeID)
         {
             string result = "", sql = "";
@@ -317,15 +322,15 @@ namespace ydb.BLL
                 {
                     //val = vNode.InnerText.Trim();
                     //if (val.Length > 0)
-                        //filter = filter.Length > 0 ? filter = filter + " And t1.FID='" + val + "'" : "t1.FID='" + val + "'";
+                    //filter = filter.Length > 0 ? filter = filter + " And t1.FID='" + val + "'" : "t1.FID='" + val + "'";
                 }
 
-               string nowString = DateTime.Now.ToString("yyyy-MM-dd");
+                string nowString = DateTime.Now.ToString("yyyy-MM-dd");
 
-               sql = " SELECT t1.*,t2.FName As FInstitutionName,t2.FID,t2.FNumber,t2.FClassID" +
-                       " FROM AuthData t1 "+
-                       " Left Join t_Items t2 On t1.FInstitutionID = t2.FID";
-                sql = sql + " Where t1.FIsDeleted=0 And t1.FBeginDate<='" + nowString + " 0:0:0.000' and  t1.FEndDate>='" + nowString + " 23:59:59.999' And t1.FEmployeeID='" + employeeID  + "'";
+                sql = " SELECT t1.*,t2.FName As FInstitutionName,t2.FID,t2.FNumber,t2.FClassID" +
+                        " FROM AuthData t1 " +
+                        " Left Join t_Items t2 On t1.FInstitutionID = t2.FID";
+                sql = sql + " Where t1.FIsDeleted=0 And t1.FBeginDate<='" + nowString + " 0:0:0.000' and  t1.FEndDate>='" + nowString + " 23:59:59.999' And t1.FEmployeeID='" + employeeID + "'";
                 sql = sql + " Order by t2.FNumber Asc";
 
                 runner = new SQLServerHelper();
@@ -379,12 +384,14 @@ namespace ydb.BLL
             }
             return result;
         }
-        #endregion
+
+        #endregion GetMyHospitalList
 
         #region Update
+
         public string Update(string dataString)
         {
-            string id = "", sql = "",  valueString = "";
+            string id = "", sql = "", valueString = "";
             bool datachecked = true;
             string result = "-1";
 
@@ -410,7 +417,7 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FGrandID='" + val + "',";
                 }
-                
+
                 vNode = doc.SelectSingleNode("UpdateItem/FProvinceID");
                 if (vNode == null || vNode.InnerXml.Trim().Length == 0)
                 {
@@ -460,19 +467,23 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FAddress='" + val + "',";
                 }
-                
+
                 id = iClass.Update(dataString);
                 if (id == "-1")//插入t_items表错误
                     result = "-1";
                 datachecked = true;
-
-                if (doc.SelectSingleNode("UpdateItem/ID").InnerText.Trim() == "" || doc.SelectSingleNode("UpdateItem/ID").InnerText.Trim() == "-1")//新增
+                vNode = doc.SelectSingleNode("UpdateItem/Action");
+                string editmode = "";
+                if (vNode != null && vNode.InnerText.Trim().Length > 0)
+                {
+                    editmode = vNode.InnerText.Trim();
+                }
+                if (doc.SelectSingleNode("UpdateItem/ID").InnerText.Trim() == "" || doc.SelectSingleNode("UpdateItem/ID").InnerText.Trim() == "-1" || editmode == "1")//新增
                 {
                     sql = "Insert into t_Hospital(FID) Values('" + id + "')";
                     if (runner.ExecuteSqlNone(sql) < 0)//插入失败
                         throw new Exception("新建失败");
                 }
-               
 
                 vNode = doc.SelectSingleNode("UpdateItem/FCityID");
                 if (vNode != null)
@@ -519,7 +530,7 @@ namespace ydb.BLL
                     if (val.Trim().Length > 0)
                         valueString = valueString + "FContrac='" + val + "',";
                 }
-               
+
                 vNode = doc.SelectSingleNode("UpdateItem/FAbbreviation");
                 if (vNode != null)
                 {
@@ -575,10 +586,7 @@ namespace ydb.BLL
                         id = "-1";
                         throw new Exception("更新失败");
                     }
-
                 }
-
-                
             }
             catch (Exception err)
             {
@@ -594,10 +602,10 @@ namespace ydb.BLL
             return result;
         }
 
-        
-        #endregion  
+        #endregion Update
 
         #region Delete
+
         public string Delete(string xmlString)
         {
             string result = "-1", id = "-1", sql = "";
@@ -626,8 +634,7 @@ namespace ydb.BLL
             result = id;
             return result;
         }
-        #endregion
 
+        #endregion Delete
     }
-
 }

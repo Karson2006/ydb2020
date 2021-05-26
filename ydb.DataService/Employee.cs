@@ -78,13 +78,14 @@ namespace ydb.DataService
                                 sql = string.Format(sql, dr["FDeptID"].ToString(), dr["FDeptName"].ToString(), dr["FPositionID"].ToString(), dr["FPositionName"].ToString(), dr["FID"].ToString(), dr["FMobile"].ToString(), dr["FTID"].ToString());
                             }
                             runner.ExecuteSqlNone(sql);
-                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='1'";
+                            sql = $"update [DataService].[dbo].[OAEmployee] set FUploadStatus='1' Where FID='{dr["FID"].ToString()}'";
                             runner.ExecuteSql(sql);
                         }
                         else
                         {
                             // throw new Exception(doc.SelectSingleNode("UpdateEmployee/Description").InnerText.Trim());
-                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='-1'";
+                            sql = $"update [DataService].[dbo].[OAEmployee] set FUploadStatus='-1',FErrorMessage='{doc.SelectSingleNode("UpdateEmployee/Description")?.InnerText ?? ""}' Where FID='{dr["FID"].ToString()}'";
+
                             runner.ExecuteSql(sql);
                         }
                     }
@@ -92,7 +93,7 @@ namespace ydb.DataService
             }
             catch (Exception err)
             {
-                throw err;
+                // throw err;
             }
             return result;
         }
@@ -114,8 +115,8 @@ namespace ydb.DataService
                     From ORG_MEMBER t1
                     Left Join ORG_POST t2 on t1.ORG_POST_ID= t2.ID
                     Left Join ORG_UNIT t3 on t1.ORG_DEPARTMENT_ID= t3.ID
-                    Where t1.IS_DELETED=0 and state= 1 and Left(t3.PATH,16)='0000000100220005'
-                    and (t1.Code+t2.NAME+t3.NAME)  Not In(Select  FTID from [DataService].dbo.[YDBEmployee]) and t1.ORG_POST_ID<>-1549616942846885069";
+                    Where t1.IS_DELETED=0 and state= 1 and  Left(t3.PATH,16) In('0000000100220005','0000000100220015')
+                    and (t1.Code+'|'+cast(t1.ORG_POST_ID As nvarchar(50)) +'|'+cast(t1.ORG_DEPARTMENT_ID As nvarchar(50))+'|'+t1.EXT_ATTR_1)  Not In(Select  FTID from [DataService].dbo.[YDBEmployee]) and t1.ORG_POST_ID<>-1549616942846885069";
 
             runner.ExecuteSqlNone(sql);
             sql = @" Select *,'0' As FSortIndex,'0' As FIsAgency,'' As FIDNumber,'' As FTypeID,'0' As FUploadOption from  [DataService].dbo.OAEmployee";

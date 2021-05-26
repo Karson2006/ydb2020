@@ -69,12 +69,12 @@ namespace ydb.DataService
                                 sql = string.Format(sql, dr["FParentID"].ToString(), dr["FParentName"].ToString(), dr["FSupervisorID"].ToString(), dr["FSupervisorName"].ToString(), dr["FDeptID"].ToString(), dr["FTID"].ToString());
                             }
                             runner.ExecuteSqlNone(sql);
-                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='1'";
+                            sql = $"update [DataService].[dbo].[OADepartment] set FUploadStatus='1' Where FID='{dr["FID"].ToString()}'";
                             runner.ExecuteSql(sql);
                         }
                         else
                         {
-                            sql = $"update [DataService].[dbo].[YDBDepartment] set FUploadStatus='-1'";
+                            sql = $"update [DataService].[dbo].[OADepartment] set FUploadStatus='-1',FErrorMessage='{doc.SelectSingleNode("UpdateDepartment/Description").InnerText}' Where FID='{dr["FID"].ToString()}'";
                             runner.ExecuteSql(sql);
                             //throw new Exception(doc.SelectSingleNode("UpdateDepartment/Description").InnerText.Trim());
                         }
@@ -83,7 +83,7 @@ namespace ydb.DataService
             }
             catch (Exception err)
             {
-                throw err;
+                // throw err;
             }
             return result;
         }
