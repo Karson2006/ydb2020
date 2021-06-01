@@ -31,7 +31,7 @@ namespace ydb.Report
                         SyncTableName = "  [yaodaibao].[dbo].[OAProcessStatus] ";
                         break;
                     case "SyncSales":
-                        SyncTableName = "  [yaodaibao].[dbo].[formmain_6786] ";
+                        SyncTableName = "  [yaodaibao].[dbo].[formmain_8728] ";
                         break;
                     case "SyncPay":
                         SyncTableName = "  [yaodaibao].[dbo].[formmain_3460] ";
