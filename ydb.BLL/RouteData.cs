@@ -34,11 +34,15 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
 
-                string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName" +
-                            " FROM RouteData t1" +
-                            " Left join t_Items t2 On t1.FEmployeeID= t2.FID" +
-                            " Left join t_Items t3 On t1.FInstitutionID= t3.FID";
+                //string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName" +
+                //            " FROM RouteData t1" +
+                //            " Left join t_Items t2 On t1.FEmployeeID= t2.FID" +
+                //            " Left join t_Items t3 On t1.FInstitutionID= t3.FID";
+                string sql = @"	SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'')  As FInstitutionName ,case FStatus when -1 then '有效签到' else   '无效签到' end FValid FROM RouteData t1
 
+                               Left join t_Items t2 On t1.FEmployeeID = t2.FID
+
+                               Left join t_Items t3 On t1.FInstitutionID = t3.FID";
                 XmlNode vNode = doc.SelectSingleNode("GetRouteList/BeginDate");
                 if (vNode != null)
                 {
@@ -156,7 +160,9 @@ namespace ydb.BLL
                         vNode = doc.CreateElement("FEmployeeName");
                         vNode.InnerText = dt.Rows[indx]["FEmployeeName"].ToString();
                         cNode.AppendChild(vNode);
-
+                        vNode = doc.CreateElement("FValid");
+                        vNode.InnerText = dt.Rows[indx]["FValid"].ToString();
+                        cNode.AppendChild(vNode);
                         vNode = doc.CreateElement("FInstitutionName");
                         if (dt.Rows[indx]["FInstitutionName"].ToString().Trim().Length > 0)
                             vNode.InnerText = dt.Rows[indx]["FInstitutionName"].ToString();

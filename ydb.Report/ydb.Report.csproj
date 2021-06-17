@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ydb.Report</RootNamespace>
     <AssemblyName>ydb.Report</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Release\</OutputPath>
+    <OutputPath>..\WS\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -70,10 +70,6 @@
     <Compile Include="TeamCompass.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ydb.BLL\ydb.BLL.csproj">
-      <Project>{958e860a-6ff4-4cb2-b49a-869dd7640c59}</Project>
-      <Name>ydb.BLL</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ydb.Common\ydb.Common.BLL.csproj">
       <Project>{bfc4eadf-20ad-4886-a7d8-191221965ad3}</Project>
       <Name>ydb.Common.BLL</Name>

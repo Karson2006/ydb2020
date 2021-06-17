@@ -27,7 +27,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Release\</OutputPath>
+    <OutputPath>..\WS\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -69,6 +69,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="OAHelperInvoke.asmx" />
     <Content Include="ReportDataInvoke.asmx" />
     <Content Include="InvoiceService.asmx" />
     <Content Include="SCMInvoke.asmx" />
@@ -89,6 +90,10 @@
   <ItemGroup>
     <Compile Include="Helper.cs">
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="OAHelperInvoke.asmx.cs">
+      <DependentUpon>OAHelperInvoke.asmx</DependentUpon>
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="ReportDataInvoke.asmx.cs">
       <DependentUpon>ReportDataInvoke.asmx</DependentUpon>

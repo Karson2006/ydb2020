@@ -338,3 +338,12 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/ydb.WebService/OAHelperInvoke.asmx.cs
+/ydb.WebService/Helper - 副本.cs
+*.dll
+*.csproj
+*.config
+*.xml
+*.exe
+ydb.WebService/ReportDataInvoke - 副本.asmx
+ydb.WebService/ReportDataInvoke.asmx - 副本.cs

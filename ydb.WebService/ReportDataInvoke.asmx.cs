@@ -279,7 +279,6 @@ namespace ydb.WebService
       catch (Exception err)
       {
         result = "" +
-
                   "<GetData>" +
                   "<Result>False</Result>" +
                   "<Description>" + err.Message + "</Description><DataRows></DataRows></GetData>";

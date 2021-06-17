@@ -169,13 +169,20 @@ namespace ydb.BLL
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xmlString);
 
-                string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName,Isnull(t4.FName,'') As FDepartmentName_Ins, " +
-                            " '' As FClientName,Isnull(t6.FName,'') As FProductName" +
-                            " FROM CallActivity t1" +
-                            " Left Join t_items t2 On t1.FEmployeeID=t2.FID" +
-                            " Left Join t_items t3 On t1.FInstitutionID=t3.FID" +
-                            " Left Join t_items t4 On t1.FDepartmentID_Ins=t4.FID" +
-                            " Left Join t_items t6 On t1.FProductID=t4.FID";
+                //string sql = "SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName,Isnull(t4.FName,'') As FDepartmentName_Ins, " +
+                //            " '' As FClientName,Isnull(t6.FName,'') As FProductName" +
+                //            " FROM CallActivity t1" +
+                //            " Left Join t_items t2 On t1.FEmployeeID=t2.FID" +
+                //            " Left Join t_items t3 On t1.FInstitutionID=t3.FID" +
+                //            " Left Join t_items t4 On t1.FDepartmentID_Ins=t4.FID" +
+                //            " Left Join t_items t6 On t1.FProductID=t4.FID";
+                string sql = @"SELECT t1.*,Isnull(t2.FName,'') As FEmployeeName,Isnull(t3.FName,'') As FInstitutionName,Isnull(t4.FName,'') As FDepartmentName_Ins,
+                             '' As FClientName, Isnull(t6.FName, '') As FProductName,case FScheduleID when '4484030a-28d1-4e5e-ba72-6655f1cb2898' then '计划外拜访' else '计划内拜访' end FValid
+                             FROM CallActivity t1
+                             Left Join t_items t2 On t1.FEmployeeID = t2.FID
+                             Left Join t_items t3 On t1.FInstitutionID = t3.FID
+                             Left Join t_items t4 On t1.FDepartmentID_Ins = t4.FID
+                             Left Join t_items t6 On t1.FProductID = t4.FID";
                 XmlNode vNode = doc.SelectSingleNode("GetCallList/BeginDate");
                 if (vNode != null)
                 {

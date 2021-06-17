@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace ydb.Report
@@ -25,22 +26,27 @@ namespace ydb.Report
                 SQLServerHelper runner = new SQLServerHelper();
                 List<Dictionary<string, string>> formson = new List<Dictionary<string, string>>();
                 Dictionary<string, string> mainform = Common.GetFieldValuesFromXmlEx(xmlMessage, "GetData", out formson, "1", "");
+                string filterCondition = "";
                 switch (syncType)
                 {
                     case "SyncFlow":
                         SyncTableName = "  [yaodaibao].[dbo].[OAProcessStatus] ";
+                        //先查ID有没有记录
+                        sql = $"select [FID] from  {SyncTableName}  where FID = {mainform["FID"]}";
                         break;
                     case "SyncSales":
                         SyncTableName = "  [yaodaibao].[dbo].[formmain_8728] ";
+                        filterCondition = $"'{mainform["Ffield0002"]}'=Ffield0002  and  '{mainform["Ffield0003"]}'=Ffield0003  and  '{mainform["Ffield0011"] }'=Ffield0011  and   '{mainform["Ffield0018"] }'=Ffield0018  and  '{mainform["Ffield0020"]}'=Ffield0020  ";
                         break;
                     case "SyncPay":
                         SyncTableName = "  [yaodaibao].[dbo].[formmain_3460] ";
+                        //先查ID有没有记录
+                        sql = $"select [FID] from  {SyncTableName}  where FID = {mainform["FID"]}";
                         break;
                     default:
                         break;
                 }
-                //先查ID有没有记录
-                sql = $"select [FID] from  {SyncTableName}  where FID = {mainform["FID"]}";
+
                 System.Data.DataTable data = runner.ExecuteSql(sql);
                 //没有查到数据，先插入在更新      
                 if (data.Rows.Count < 1)

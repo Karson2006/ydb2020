@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ydb.BLL</RootNamespace>
     <AssemblyName>ydb.BLL</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -46,7 +46,10 @@
   <ItemGroup>
     <Compile Include="AuthData.cs" />
     <Compile Include="FeeData.cs" />
+    <Compile Include="ItemClass.cs" />
     <Compile Include="MktActivity.cs" />
+    <Compile Include="RegRepresentative.cs" />
+    <Compile Include="RepresentativeRegistration.cs" />
     <Compile Include="WorkReport.cs" />
     <Compile Include="BLCommon.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
