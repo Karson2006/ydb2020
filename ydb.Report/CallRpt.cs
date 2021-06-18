@@ -664,7 +664,7 @@ namespace ydb.Report
                                     int.Parse(weekNameList[i].Split('-')[1].Replace("\"", "")));
                                 viewweekList.Add($@"""{times.Item1.Month + "/" + times.Item1.Day + "~" + times.Item2.Month + "/" + times.Item2.Day }""");
                             }
-                            subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[{string.Join(",", widthList.ToArray())}],""viewweek"":[""类型"",{string.Join(",", viewweekList.ToArray())}], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                            subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[{string.Join(",", widthList.ToArray())}],""viewweek"":[""类型"",""次数""], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",{string.Join(",", weekNameList.ToArray())}], ""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                         }
                         else
                         {
@@ -684,6 +684,7 @@ namespace ydb.Report
                                 //        amount += int.Parse(row[i].ToString());
                                 //    }
                                 //}
+                                amount += int.Parse(row["amount"].ToString());
                                 rowList.Add($@"[""{row["FType"]}"",""{row["amount"]}""]");
                             }
                             subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[100,100],""viewweek"":[""类型"",""{startDate} |{endDate}""], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",""{startDate} |{endDate}""], ""startDate"":""{startDate}"",""endDate"":""{endDate}"",""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
@@ -856,14 +857,14 @@ namespace ydb.Report
                 sql = $@"Select [FDept_2] as 销售总部
                       ,[FDept_3] as 大区
                       ,[FDept_4] as 省区
-                      ,ISNULL([FDept_5],'') as  地区,Isnull(t4.FName,'') As  姓名,t1.FSignInAddress 签到地址, FSignInTime 签到时间,FSignOutTime 签退时间,FRemark 备注,[FDistance]  as 签到签退距离
+                      ,ISNULL([FDept_5],'') as  地区,Isnull(t2.FName,'') As  姓名,t1.FSignInAddress 签到地址, FSignInTime 签到时间,FSignOutTime 签退时间,FRemark 备注,[FDistance]  as 签到签退距离
                       ,[FType] as 类型
                       ,[FWeek] as 周
                       ,[FMonth] as 月份
 
-                From [yaodaibao].[dbo].[RouteData_His] t1 Left Join t_Items t2
-                On t1.FInstitutionID = t2.FID Left Join t_Items t4 On t1.FEmployeeID = t4.FID
-				left join t_Items t5 on t1.FInstitutionID = t5.FName where  t1.FEmployeeID in ('{employeeId}')  and  FSignInTime between '{startDate}' and  '{endDate}'   Order by t4.FName Desc";
+                From [yaodaibao].[dbo].[RouteData_His] t1 Left Join t_Items t2         
+									      On t1.FInstitutionID = t2.FID and  t1.FEmployeeID = t2.FID
+										  and   t1.FInstitutionID = t2.FName  where  t1.FEmployeeID in ('{employeeId}')  and  FSignInTime between '{startDate}' and  '{endDate}'   Order by t2.FName Desc";
             }
             SQLServerHelper runner = new SQLServerHelper();
             //sql = string.Format(sql, date1, date2, employeeId);
