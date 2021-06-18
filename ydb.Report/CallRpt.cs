@@ -687,7 +687,7 @@ namespace ydb.Report
                                 amount += int.Parse(row["amount"].ToString());
                                 rowList.Add($@"[""{row["FType"]}"",""{row["amount"]}""]");
                             }
-                            subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[100,100],""viewweek"":[""类型"",""{startDate} |{endDate}""], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",""{startDate} |{endDate}""], ""startDate"":""{startDate}"",""endDate"":""{endDate}"",""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
+                            subList.Add($@"{{""name"":""{item["FName"]}"",""id"":""{item["FID"].ToString().Replace("E", "")}"",""nextdep"":""{nextdep}"",""querytype"":""{ querytype}"",""amount"":""{amount}"",""widthArr"":[100,100],""viewweek"":[""类型"",""次数""], ""viewtype"":""{int.Parse(viewtype)}"", ""tableHead"":[""日期"",""{startDate} |{endDate}""], ""startDate"":""{startDate}"",""endDate"":""{endDate}"",""tableData"":[{string.Join(", ", rowList.ToArray())}] }}");
                         }
                     }
                 }
