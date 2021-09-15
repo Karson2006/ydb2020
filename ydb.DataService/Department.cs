@@ -51,8 +51,10 @@ namespace ydb.DataService
 
                         xmlString = string.Format(xmlString, dr["FDeptID"].ToString(), dr["FDeptName"].ToString(), dr["FDeptNumber"].ToString(),
                                                             dr["FParentID"].ToString(), 0, dr["FSupervisorID"].ToString(), dr["FAction"].ToString());
-
+                        System.Diagnostics.Trace.WriteLine(xmlString);
                         string xmlResult = ydb.DataService.DataHelper.DeptDatanvoke("UpdateDepartment", xmlString);
+                        System.Diagnostics.Trace.WriteLine("结果");
+                        System.Diagnostics.Trace.WriteLine(xmlResult);
                         doc.LoadXml(xmlResult);
                         if (doc.SelectSingleNode("UpdateDepartment/Result").InnerText == "True")//YRB数据库上传成功，OA-YRB数据插入相应数据
                         {
@@ -74,6 +76,7 @@ namespace ydb.DataService
                         }
                         else
                         {
+                            
                             sql = $"update [DataService].[dbo].[OADepartment] set FUploadStatus='-1',FErrorMessage='{doc.SelectSingleNode("UpdateDepartment/Description").InnerText}' Where FID='{dr["FID"].ToString()}'";
                             runner.ExecuteSql(sql);
                             //throw new Exception(doc.SelectSingleNode("UpdateDepartment/Description").InnerText.Trim());
@@ -100,14 +103,14 @@ namespace ydb.DataService
             runner.ExecuteSqlNone(sql);
             //将OA数据库中所有FTID（部门ID+主管ID+上级部门ID）在YRB中没有的提取处理（可能是新增或有变化的）
             sql = @"Insert Into [DataService].dbo.OADepartment(FDeptID,FDeptName,FSupervisorID,FParentID,FLevel,FDeptNumber,FParentName,FSupervisorName,FDetail,FTID)
-                    Select t2.ID As FDeptID,t2.Name As FDeptName,t1.field0004 As FSupervisorID,t1.field0005 As FParentID,t1.field0009 As FLevel,
-                    t1.field0012 As FDeptNumber,t3.Name As FParentName,t4.Name As FSupervisorName,(Case t1.field0010 When -4875734478274671070 Then 1 else  0 end) AS FDetail,
-                    (t1.field0002+'_'+ t1.field0004+'_'+t1.field0005) As FTID
-                    From formmain_5499 t1
-                    Left Join ORG_UNIT t2 On t1.field0002= t2.ID
-                    Left Join ORG_UNIT t3 On t1.field0005= t3.ID
-                    Left Join ORG_MEMBER t4 On t1.field0004= t4.ID
-                    Where (t1.field0002+'_'+ t1.field0004+'_'+t1.field0005) Not In(Select FTID From [DataService].dbo.[YDBDepartment])
+                                   Select t2.ID As FDeptID,t2.Name As FDeptName,t1.field0005 As FSupervisorID,t1.field0012 As FParentID,t1.field0004 As FLevel,
+               t1.field0001 As FDeptNumber,t3.Name As FParentName,isnull(t4.Name,'') As FSupervisorName, 1 AS FDetail,
+                    (t1.field0002+'_'+ t1.field0005+'_'+t1.field0012) As FTID
+                    From v3x.dbo.formmain_8662 t1
+                    Left Join v3x.dbo.ORG_UNIT t2 On t1.field0002= t2.ID
+                    Left Join v3x.dbo.ORG_UNIT t3 On t1.field0012= t3.ID
+                    Left Join v3x.dbo.ORG_MEMBER t4 On t1.field0005= t4.ID
+                    Where  Left(t2.PATH,16) In ('0000000100220005','0000000100220015') and  (t1.field0002+'_'+ CAST(t1.field0004 as nvarchar(500)) +'_'+t1.field0005) Not In(Select FTID From [DataService].dbo.[YDBDepartment])
                     Order by t1.field0009 asc,t1.field0012 ";
 
             runner.ExecuteSqlNone(sql);

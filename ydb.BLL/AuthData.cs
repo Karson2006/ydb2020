@@ -13,14 +13,14 @@ namespace ydb.BLL
     {
         public AuthData()
         {
-            
+
         }
 
         #region Update
         public string Update(string dataString)
         {
-            string id = "", sql = "" ;
-            string institutionID = "", institutionType = "", objectID = "", authType = "",comID="";;
+            string id = "", sql = "";
+            string institutionID = "", institutionType = "", objectID = "", authType = "", comID = ""; ;
             string result = "-1";
 
             SQLServerHelper runner = new SQLServerHelper();
@@ -36,13 +36,13 @@ namespace ydb.BLL
                     throw new Exception("医院/控销区划/代理商ID不能为空");
                 else
                     institutionID = vNode.InnerText;
-                
+
                 vNode = doc.SelectSingleNode("UpdateAuthData/FCompanyID");
                 if (vNode == null || vNode.InnerXml.Trim().Length == 0)
-                    comID="-1";
+                    comID = "-1";
                 else
                     comID = vNode.InnerText;
-                    
+
                 vNode = doc.SelectSingleNode("UpdateAuthData/FInstitutionType");
                 if (vNode == null || vNode.InnerXml.Trim().Length == 0)
                     throw new Exception("机构类型ID不能为空");
@@ -124,7 +124,7 @@ namespace ydb.BLL
                             }
                             else
                             {
-                                sql = "Select FID from AuthDatas Where FInstitutionID='" + institutionID + "' and FDeleted=0 and FAuthObjectID='" + objectID+"'";
+                                sql = "Select FID from AuthDatas Where FInstitutionID='" + institutionID + "' and FDeleted=0 and FAuthObjectID='" + objectID + "'";
                                 dt = runner.ExecuteSql(sql);
                                 if (dt.Rows.Count == 0)//不存在该授权，授权
                                 {
@@ -135,7 +135,7 @@ namespace ydb.BLL
                             }
                         }
                         break;
-                        #endregion
+                    #endregion
 
                     case "2"://控销区域
                         #region 控销区域授权
@@ -176,7 +176,7 @@ namespace ydb.BLL
                             }
                         }
                         break;
-                        #endregion
+                    #endregion
 
                     case "3"://代理商
                         #region 代理商授权
@@ -228,8 +228,8 @@ namespace ydb.BLL
 
             return result;
         }
-        
-        #endregion  
+
+        #endregion
 
         #region GetList
         /// <summary>
@@ -238,7 +238,7 @@ namespace ydb.BLL
         /// <param name="xmlString"></param>
         /// <param name="getOption:Employee,人员（药代/招商/市场）Product：产品></param>
         /// <returns></returns>
-        public string GetList(string xmlString,string getOption ="Employee")
+        public string GetList(string xmlString, string getOption = "Employee")
         {
             string result = "", sql = "", filter = " t1.FDeleted=0 ", val = "";
             string institutionType = "1";
@@ -248,14 +248,18 @@ namespace ydb.BLL
             try
             {
                 XmlDocument doc = new XmlDocument();
-                xmlString= xmlString.Replace("GetAuthDataList>","GetList>");
+                xmlString = xmlString.Replace("GetAuthDataList>", "GetList>");
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("GetList/InstitutionID");
                 if (vNode != null)
                 {
                     val = vNode.InnerText.Trim();
-                    
-                    if (val.Length > 0 && val!="-1")
+                    //取产品列表时,设置医院ID为99，获取到所有的产品
+                    if (getOption == "Product")
+                    {
+                        val = "-99";
+                    }
+                    if (val.Length > 0 && val != "-1")
                         filter = filter.Length > 0 ? filter = filter + " And t1.FInstitutionID='" + val + "'" : "t1.FInstitutionID='" + val + "'";
                 }
 
@@ -263,14 +267,14 @@ namespace ydb.BLL
                 if (vNode != null)
                 {
                     val = vNode.InnerText.Trim();
-                    
+
                     if (val.Length > 0)
                         filter = filter.Length > 0 ? filter = filter + " And t1.FAuthObjectID='" + val + "'" : "t1.FAuthObjectID='" + val + "'";
                 }
 
-                
-                switch(getOption)
-                {  
+
+                switch (getOption)
+                {
                     case "Employee":
                         filter = filter.Length > 0 ? filter = filter + " And t1.FAuthType in('3','4','5','6')" : "t1.FAuthType in('3','4','5','6')";
                         break;
@@ -285,20 +289,20 @@ namespace ydb.BLL
                             if (val.Length > 0)
                                 filter = filter.Length > 0 ? filter = filter + " And t1.FAuthType in('" + val + "')" : "t1.FAuthType In('" + val + ")'";
                         }
-                                    if (val.Length > 0)
+                        if (val.Length > 0)
                             filter = filter.Length > 0 ? filter = filter + " And t1.FAuthType in('" + val + "')" : "t1.FAuthType In('" + val + ")'";
                         break;
-                           
-                    }
 
-                    
-                   
+                }
+
+
+
 
                 vNode = doc.SelectSingleNode("GetList/InstitutionType");
 
                 if (vNode != null)
                 {
-                    
+
                     val = vNode.InnerText.Trim();
                     if (val.Length > 0)
                     {
@@ -309,45 +313,45 @@ namespace ydb.BLL
                 }
 
                 #region 读取Hospital_Auth_Data 记录 废代码
-//                if (institutionType == "1")
-//                {
+                //                if (institutionType == "1")
+                //                {
 
-//                    sql = @"Select t1.field0005 AS FAuthObjectID,t2.FName As FAuthObjectName,t3.FID AS FInstitutionID,t3.FName AS FInstitutionName,
-//                        t3.FID AS ID
-//                        from Hospital_Auth_Data t1 
-//                        Left Join t_Items t2 On t1.field0005 = t2.FID
-//                        Left Join t_Items t3 On t1.field0001=t3.FNumber
-//                        Where t1.field0005='{0}'
-//
-//                        Union
-//
-//                        Select t1.field0006 AS FAuthObjectID,t2.FName As FAuthObjectName,t3.FID AS FInstitutionID,t3.FName AS FInstitutionName,
-//                        t3.FID AS ID
-//                        from Hospital_Auth_Data t1 
-//                        Left Join t_Items t2 On t1.field0006 = t2.FID
-//                        Left Join t_Items t3 On t1.field0001=t3.FNumber
-//                        Where t1.field0006='{0}'
-//
-//                        Union
-//
-//                        Select t1.field0007 AS FAuthObjectID,t2.FName As FAuthObjectName,t3.FID AS FInstitutionID,t3.FName AS FInstitutionName,
-//                        t3.FID AS ID
-//                        from Hospital_Auth_Data t1 
-//                        Left Join t_Items t2 On t1.field0007 = t2.FID
-//                        Left Join t_Items t3 On t1.field0001=t3.FNumber
-//                        Where t1.field0007='{0}'";
-//                    sql = string.Format(sql, objectid);
-//                }
-//                else
-//                {
-//                    sql = " Select t1.*,Isnull(t2.FName,'') As FInstitutionName,Isnull(t3.FName,'') As FAuthObjectName" +
-//                            " From AuthDatas t1" +
-//                            " Left Join t_Items t2 On t1.FInstitutionID= t2.FID" +
-//                            " Left Join t_Items t3 On t1.FAuthObjectID= t3.FID";
+                //                    sql = @"Select t1.field0005 AS FAuthObjectID,t2.FName As FAuthObjectName,t3.FID AS FInstitutionID,t3.FName AS FInstitutionName,
+                //                        t3.FID AS ID
+                //                        from Hospital_Auth_Data t1 
+                //                        Left Join t_Items t2 On t1.field0005 = t2.FID
+                //                        Left Join t_Items t3 On t1.field0001=t3.FNumber
+                //                        Where t1.field0005='{0}'
+                //
+                //                        Union
+                //
+                //                        Select t1.field0006 AS FAuthObjectID,t2.FName As FAuthObjectName,t3.FID AS FInstitutionID,t3.FName AS FInstitutionName,
+                //                        t3.FID AS ID
+                //                        from Hospital_Auth_Data t1 
+                //                        Left Join t_Items t2 On t1.field0006 = t2.FID
+                //                        Left Join t_Items t3 On t1.field0001=t3.FNumber
+                //                        Where t1.field0006='{0}'
+                //
+                //                        Union
+                //
+                //                        Select t1.field0007 AS FAuthObjectID,t2.FName As FAuthObjectName,t3.FID AS FInstitutionID,t3.FName AS FInstitutionName,
+                //                        t3.FID AS ID
+                //                        from Hospital_Auth_Data t1 
+                //                        Left Join t_Items t2 On t1.field0007 = t2.FID
+                //                        Left Join t_Items t3 On t1.field0001=t3.FNumber
+                //                        Where t1.field0007='{0}'";
+                //                    sql = string.Format(sql, objectid);
+                //                }
+                //                else
+                //                {
+                //                    sql = " Select t1.*,Isnull(t2.FName,'') As FInstitutionName,Isnull(t3.FName,'') As FAuthObjectName" +
+                //                            " From AuthDatas t1" +
+                //                            " Left Join t_Items t2 On t1.FInstitutionID= t2.FID" +
+                //                            " Left Join t_Items t3 On t1.FAuthObjectID= t3.FID";
 
-//                    if (filter.Length > 0)
-//                        sql = sql + " Where " + filter;
-//                }
+                //                    if (filter.Length > 0)
+                //                        sql = sql + " Where " + filter;
+                //                }
                 #endregion
 
                 sql = " Select t1.*,Isnull(t2.FName,'') As FInstitutionName,Isnull(t3.FName,'') As FAuthObjectName" +
@@ -360,7 +364,7 @@ namespace ydb.BLL
                 runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
                 result = Common.DataTableToXml(dt, "GetAuthDataList", "", "List");
-                
+
             }
             catch (Exception err)
             {
@@ -388,11 +392,11 @@ namespace ydb.BLL
                 //xmlString = doc.OuterXml ;
 
                 XmlNode vNode = doc.SelectSingleNode("GetAuthDataList/InstitutionID");
-                if (vNode == null || vNode.InnerText.Trim().Length ==0)
+                if (vNode == null || vNode.InnerText.Trim().Length == 0)
                 {
                     throw new Exception("医院ID不能为空");
                 }
-                result = GetList(xmlString,"Product");
+                result = GetList(xmlString, "Product");
                 result = result.Replace("FInstitutionID>", "FHospitalID>");
                 result = result.Replace("FInstitutionName>", "FHospitalName>");
                 result = result.Replace("FAuthObjectID>", "FProductID>");
@@ -409,13 +413,13 @@ namespace ydb.BLL
         #region UpdateHospitalProducts
         public string UpdateHospitalProducts(string xmlString)
         {
-            string result = "", hospitalID = "", xmlData = "", comID="",id="-1";
+            string result = "", hospitalID = "", xmlData = "", comID = "", id = "-1";
             string[] AdddProducts, DeleteProducts;
 
             try
             {
                 XmlDocument doc = new XmlDocument();
-             
+
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("UpdateHospitalProducts/HospitalID");
                 if (vNode == null || vNode.InnerText.Trim().Length == 0)
@@ -435,14 +439,14 @@ namespace ydb.BLL
                 if (vNode != null)
                 {
                     AdddProducts = vNode.InnerText.Trim().Split('|');
-                    if(AdddProducts.Length >0)//新增的产品
+                    if (AdddProducts.Length > 0)//新增的产品
                     {
-                        for(int i=0;i<AdddProducts.Length;i++)
+                        for (int i = 0; i < AdddProducts.Length; i++)
                         {
-                            if (AdddProducts[i].Trim().Length >0)
+                            if (AdddProducts[i].Trim().Length > 0)
                             {
                                 xmlData = "<UpdateAuthData>" +
-                                            "<FCompanyID>"+ comID +"</FCompanyID>" +
+                                            "<FCompanyID>" + comID + "</FCompanyID>" +
                                             "<FInstitutionType>1</FInstitutionType>" +
                                             "<FAuthObjectID>" + AdddProducts[i] + "</FAuthObjectID>" +
                                             "<FAuthType>1</FAuthType>" +
@@ -462,7 +466,7 @@ namespace ydb.BLL
                         string sql = "";
                         for (int i = 0; i < DeleteProducts.Length; i++)
                         {
-                            sql =sql+ "   Update AuthDatas Set FDeleted=1,FEndDate='" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "' Where FInstitutionID='" + hospitalID + "' And FAuthObjectID='" + DeleteProducts[i]  + "' And FAuthType=1";
+                            sql = sql + "   Update AuthDatas Set FDeleted=1,FEndDate='" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "' Where FInstitutionID='" + hospitalID + "' And FAuthObjectID='" + DeleteProducts[i] + "' And FAuthType=1";
                         }
                         SQLServerHelper runner = new SQLServerHelper();
                         runner.ExecuteSqlNone(sql);
@@ -474,7 +478,7 @@ namespace ydb.BLL
             catch (Exception err)
             {
                 id = "-1";
-               throw err;
+                throw err;
             }
             result = id;
             return result;
@@ -566,12 +570,12 @@ namespace ydb.BLL
             //FModeID（代理）:08bcbe1b-72ea-4a64-881a-0f08bd44d9e2；FProductCategoryID（产品大类ID）：ab867182-94c6-4385-82e7-decbefbeb105
             try
             {
-                string sql = " Insert Into AuthData(FInstitutionID,FInstitutionType,FEmployeeID,FSKUID,FAgentID,FModeID)"+
-                      "Select (Case FProductCategoryID When 'ab867182-94c6-4385-82e7-decbefbeb105' Then FHospitalID Else FCountryID End ) As FInstitutionID,"+
-                      "(Case FProductCategoryID When 'ab867182-94c6-4385-82e7-decbefbeb105' Then 1 Else 2 End ) As FInstitutionType,"+
+                string sql = " Insert Into AuthData(FInstitutionID,FInstitutionType,FEmployeeID,FSKUID,FAgentID,FModeID)" +
+                      "Select (Case FProductCategoryID When 'ab867182-94c6-4385-82e7-decbefbeb105' Then FHospitalID Else FCountryID End ) As FInstitutionID," +
+                      "(Case FProductCategoryID When 'ab867182-94c6-4385-82e7-decbefbeb105' Then 1 Else 2 End ) As FInstitutionType," +
                       "'" + employeeId + "', FProductID,'" + agentId + "','08bcbe1b-72ea-4a64-881a-0f08bd44d9e2'" +
                       "From Reg_Application Where FID='" + applicationID + "' And FDeleted=0";
-                
+
                 SQLServerHelper runner = new SQLServerHelper();
                 if (runner.ExecuteSqlNone(sql) > 0)
                     result = true;
@@ -611,24 +615,24 @@ namespace ydb.BLL
                 vNode = doc.SelectSingleNode("UpdateHospitalOwners/DevelopeManagerID");
                 if (vNode != null)
                 {
-                    if(vNode.InnerText.Trim().Length >0)//设置招商经理
-                    { 
-                        developerID=vNode.InnerText.Trim();
-                            xmlData = "<UpdateAuthData>" +
-                                        "<FCompanyID>" + comID + "</FCompanyID>" +
-                                        "<FInstitutionType>1</FInstitutionType>" +
-                                        "<FAuthObjectID>" + developerID + "</FAuthObjectID>" +
-                                        "<FAuthType>3</FAuthType>" +
-                                        "<FInstitutionID>" + hospitalID + "</FInstitutionID>" +
-                                        "</UpdateAuthData>";
-                            Update(xmlData);
+                    if (vNode.InnerText.Trim().Length > 0)//设置招商经理
+                    {
+                        developerID = vNode.InnerText.Trim();
+                        xmlData = "<UpdateAuthData>" +
+                                    "<FCompanyID>" + comID + "</FCompanyID>" +
+                                    "<FInstitutionType>1</FInstitutionType>" +
+                                    "<FAuthObjectID>" + developerID + "</FAuthObjectID>" +
+                                    "<FAuthType>3</FAuthType>" +
+                                    "<FInstitutionID>" + hospitalID + "</FInstitutionID>" +
+                                    "</UpdateAuthData>";
+                        Update(xmlData);
                     }
                 }
 
                 vNode = doc.SelectSingleNode("UpdateHospitalOwners/RepresentativeID");
                 if (vNode != null)
                 {
-                    representiveID=vNode.InnerText.Trim();
+                    representiveID = vNode.InnerText.Trim();
                     if (vNode.InnerText.Trim().Length > 0)//医药代表
                     {
 
@@ -647,7 +651,7 @@ namespace ydb.BLL
                 {
                     if (vNode.InnerText.Trim().Length > 0)//市场经理
                     {
-                        mktManagerID=vNode.InnerText.Trim();
+                        mktManagerID = vNode.InnerText.Trim();
                         xmlData = "<UpdateAuthData>" +
                                     "<FCompanyID>" + comID + "</FCompanyID>" +
                                     "<FInstitutionType>1</FInstitutionType>" +
@@ -663,11 +667,11 @@ namespace ydb.BLL
                 {
                     if (vNode.InnerText.Trim().Length > 0)//代理商
                     {
-                        agencyID=vNode.InnerText.Trim();
+                        agencyID = vNode.InnerText.Trim();
                         xmlData = "<UpdateAuthData>" +
                                     "<FCompanyID>" + comID + "</FCompanyID>" +
                                     "<FInstitutionType>1</FInstitutionType>" +
-                                    "<FAuthObjectID>" +agencyID  + "</FAuthObjectID>" +
+                                    "<FAuthObjectID>" + agencyID + "</FAuthObjectID>" +
                                     "<FAuthType>2</FAuthType>" +
                                     "<FInstitutionID>" + hospitalID + "</FInstitutionID>" +
                                     "</UpdateAuthData>";
@@ -708,7 +712,7 @@ namespace ydb.BLL
                 #endregion
 
                 id = hospitalID;
-                
+
             }
             catch (Exception err)
             {
@@ -720,10 +724,16 @@ namespace ydb.BLL
         }
         #endregion
 
+        public string CommitApproveHospital(string jsonstring)
+        {
+
+            return "";
+        }
+
         #region UpdateRegionOwners
         public string UpdateRegionOwners(string xmlString)
         {
-            string result = "", regionID = "", xmlData = "", comID = "", id = "-1",sql;
+            string result = "", regionID = "", xmlData = "", comID = "", id = "-1", sql;
             string agencyID = "", developerID = "", mktManagerID = "";
             DataTable dt;
             try
@@ -796,16 +806,16 @@ namespace ydb.BLL
                 }
 
                 sql = "Select FID from AuthData_Region Where FID ='" + regionID + "'";
-                
+
                 dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count == 0)//已存在该医院的授权记录
                 {
                     sql = "Insert Into AuthData_Region(FID,FAgencyID,FDeveloperID,FMarketManagerID) Values('";
-                    sql = sql + regionID + "','" + agencyID + "','" + developerID  + "','" + mktManagerID + "')";
+                    sql = sql + regionID + "','" + agencyID + "','" + developerID + "','" + mktManagerID + "')";
                 }
                 else
                 {
-                    sql = "Update AuthData_Region Set FAgencyID='" + agencyID + "',FDeveloperID='" + developerID + "',FMarketManagerID='" + mktManagerID + "',FDate='"+ DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") +"' Where FID='" + regionID + "'";
+                    sql = "Update AuthData_Region Set FAgencyID='" + agencyID + "',FDeveloperID='" + developerID + "',FMarketManagerID='" + mktManagerID + "',FDate='" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "' Where FID='" + regionID + "'";
                 }
                 runner.ExecuteSqlNone(sql);
 
@@ -854,7 +864,7 @@ namespace ydb.BLL
                 {
                     if (vNode.InnerText.Trim().Length > 0)//设置招商经理
                     {
-                        developerID= vNode.InnerText.Trim() ;
+                        developerID = vNode.InnerText.Trim();
                         xmlData = "<UpdateAuthData>" +
                                     "<FCompanyID>" + comID + "</FCompanyID>" +
                                     "<FInstitutionType>3</FInstitutionType>" +
@@ -887,7 +897,7 @@ namespace ydb.BLL
                 if (dt.Rows.Count == 0)//代理商授权不存在
                 {
                     sql = "Insert Into AuthData_Agency(FAgencyID,FDeveloperID,FMarketManagerID) Values('";
-                    sql = sql +  agencyID + "','" + developerID + "','" + mktManagerID + "')";
+                    sql = sql + agencyID + "','" + developerID + "','" + mktManagerID + "')";
                 }
                 else
                 {
@@ -932,7 +942,7 @@ namespace ydb.BLL
                 result = result.Replace("FInstitutionType>", "ClientType>");
 
                 doc.LoadXml(result);
-               
+
             }
             catch (Exception err)
             {
@@ -945,7 +955,7 @@ namespace ydb.BLL
         #region GetDetailByHospitalID
         public string GetDetailByHospitalID(string xmlString)
         {
-            string result = "",sql="",hospitalID="";
+            string result = "", sql = "", hospitalID = "";
             DataTable dt;
             result = "<GetDetailByHospitalID>" +
                     "<Result>False</Result>" +
@@ -978,15 +988,15 @@ namespace ydb.BLL
                 {
                     hospitalID = vNode.InnerText.Trim();
                     sql = "Select t1.*,IsNull(t2.FName,'') As FHospitalName,IsNull(t3.FName,'') As FModeName,t5.FAgencyID,t5.FDeveloperID,t5.FRepresentativeID,t5.FMarketManagerID," +
-                           " IsNull(t6.FName,'') As FAgencyName,IsNull(t7.FName,'') As FDeveloperName,IsNull(t8.FName,'') As FRepresentativeName,IsNull(t9.FName,'') As MarketManagerName"+
-                           " From  t_Hospital t1 "+
-                           " Left Join t_Items t2 On t1.FID= t2.FID"+
-                           " Left Join t_Items t3 On t1.FModeID= t3.FID"+
-                           " Left Join AuthData_Hospital t5 On t1.FID= t5.FHospitalID"+
-                           " Left Join t_Items t6 On t5.FAgencyID= t6.FID"+
-                           " Left Join t_Items t7 On t5.FDeveloperID= t7.FID"+
-                           " Left Join t_Items t8 On t5.FRepresentativeID= t8.FID"+
-                           " Left Join t_Items t9 On t5.FMarketManagerID= t9.FID"+
+                           " IsNull(t6.FName,'') As FAgencyName,IsNull(t7.FName,'') As FDeveloperName,IsNull(t8.FName,'') As FRepresentativeName,IsNull(t9.FName,'') As MarketManagerName" +
+                           " From  t_Hospital t1 " +
+                           " Left Join t_Items t2 On t1.FID= t2.FID" +
+                           " Left Join t_Items t3 On t1.FModeID= t3.FID" +
+                           " Left Join AuthData_Hospital t5 On t1.FID= t5.FHospitalID" +
+                           " Left Join t_Items t6 On t5.FAgencyID= t6.FID" +
+                           " Left Join t_Items t7 On t5.FDeveloperID= t7.FID" +
+                           " Left Join t_Items t8 On t5.FRepresentativeID= t8.FID" +
+                           " Left Join t_Items t9 On t5.FMarketManagerID= t9.FID" +
                            " Where t1.FID='" + hospitalID + "' and t1.FDeleted=0";
 
                     dt = runner.ExecuteSql(sql);
@@ -1024,7 +1034,7 @@ namespace ydb.BLL
                 dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)//产品
                 {
-                    doc.SelectSingleNode("GetDetailByHospitalID/Result").InnerText ="True";
+                    doc.SelectSingleNode("GetDetailByHospitalID/Result").InnerText = "True";
                     XmlNode pNode = doc.SelectSingleNode("GetDetailByHospitalID/ProductList");
                     foreach (DataRow row in dt.Rows)
                     {
@@ -1040,7 +1050,7 @@ namespace ydb.BLL
                         cNode.AppendChild(vNode);
                     }
                 }
-               
+
                 result = doc.OuterXml;
             }
             catch (Exception err)
@@ -1134,16 +1144,16 @@ namespace ydb.BLL
                 }
 
                 //招商经理、市场经理
-                sql = "Select t1.* ,IsNull(t3.FName,'') As FDevelopeName,IsNull(t2.FName,'') As FAgencyName,IsNull(t4.FName,'') As FMarketManagerName"+
-                      " From AuthData_Agency t1"+
-                      "  Left Join t_Items t2 On t1.FAgencyID= t2.FID"+
-                      "  Left Join t_Items t3 On t3.FID= t1.FDeveloperID"+
-                      "  Left Join t_Items t4 On t4.FID= t1.FMarketManagerID"+
+                sql = "Select t1.* ,IsNull(t3.FName,'') As FDevelopeName,IsNull(t2.FName,'') As FAgencyName,IsNull(t4.FName,'') As FMarketManagerName" +
+                      " From AuthData_Agency t1" +
+                      "  Left Join t_Items t2 On t1.FAgencyID= t2.FID" +
+                      "  Left Join t_Items t3 On t3.FID= t1.FDeveloperID" +
+                      "  Left Join t_Items t4 On t4.FID= t1.FMarketManagerID" +
                       "  Where  t1.FAgencyID='" + agencyID + "'";
 
                 dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)
-                {   
+                {
                     doc.SelectSingleNode("GetDetailByAgencyID/Result").InnerText = "True";
                     doc.SelectSingleNode("GetDetailByAgencyID/AgencyID").InnerText = dt.Rows[0]["FAgencyID"].ToString();
                     doc.SelectSingleNode("GetDetailByAgencyID/AgencyName").InnerText = dt.Rows[0]["FAgencyName"].ToString();
@@ -1225,7 +1235,7 @@ namespace ydb.BLL
                       "  Left Join t_Items t2 On t2.FID=t1.FAgencyID" +
                       "  Left Join t_Items t3 On t3.FID= t1.FDeveloperID" +
                       "  Left Join t_Items t4 On t4.FID= t1.FMarketManagerID";
-                sql = sql + " Where t1.FID ='" + regionID + "'"; 
+                sql = sql + " Where t1.FID ='" + regionID + "'";
                 dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)
                 {
@@ -1240,7 +1250,7 @@ namespace ydb.BLL
                     doc.SelectSingleNode("GetDetailByRegionID/MarketingManagerName").InnerText = dt.Rows[0]["FMarketManagerName"].ToString();
                 }
 
-               
+
                 result = doc.OuterXml;
             }
             catch (Exception err)
@@ -1254,9 +1264,9 @@ namespace ydb.BLL
         #region GetAuthHospitalList
         public string GetAuthHospitalList(string xmlString)
         {
-            string result = "", sql = "", filter = " t1.FDeleted=0 ", val = "",hospitalIDs="";
+            string result = "", sql = "", filter = " t1.FDeleted=0 ", val = "", hospitalIDs = "";
             SQLServerHelper runner;
-             DataTable dt;
+            DataTable dt;
             try
             {
                 runner = new SQLServerHelper();
@@ -1284,12 +1294,12 @@ namespace ydb.BLL
                     val = vNode.InnerText.Trim();
                     if (val.Length > 0)
                     {
-                        sql="Select distinct t1.FInstitutionID "+
-                            " From AuthDatas t1"+
-                            " Left Join t_Items t2 On t2.FID= t1.FAuthObjectID"+
+                        sql = "Select distinct t1.FInstitutionID " +
+                            " From AuthDatas t1" +
+                            " Left Join t_Items t2 On t2.FID= t1.FAuthObjectID" +
                             " Where t1.FAuthType=1 And t2.FName like '%" + val + "%'";
                         dt = runner.ExecuteSql(sql);
-                        foreach(DataRow row in dt.Rows)
+                        foreach (DataRow row in dt.Rows)
                         {
                             hospitalIDs = hospitalIDs + "'" + row["FInstitutionID"].ToString() + "',";
                         }
@@ -1373,23 +1383,23 @@ namespace ydb.BLL
                         filter = filter.Length > 0 ? filter = filter + " And t1.FCityID='" + val + "'" : "t1.FCityID='" + val + "'";
                 }
 
-                sql = "Select t1.*,IsNull(t2.FName,'') As FHospitalName,IsNull(t3.FName,'') As FModeName,IsNull(t4.FName,'') As FGrandName,"+
-                    " IsNull(t6.FName,'') As FAgencyName,IsNull(t7.FName,'') As FDeveloperName,IsNull(t8.FName,'') As FRepresentativeName,IsNull(t9.FName,'') As MarketManagerName"+
-                    " From  t_Hospital t1 "+
-                    " Left Join t_Items t2 On t1.FID= t2.FID"+
-                    " Left Join t_Items t3 On t1.FModeID= t3.FID"+
-                    " Left Join t_Items t4 On t1.FGrandID= t4.FID"+
-                    " Left Join AuthData_Hospital t5 On t1.FID= t5.FHospitalID"+
-                    " Left Join t_Items t6 On t5.FAgencyID= t6.FID"+
-                    " Left Join t_Items t7 On t5.FDeveloperID= t7.FID"+
-                    " Left Join t_Items t8 On t5.FRepresentativeID= t8.FID"+
+                sql = "Select t1.*,IsNull(t2.FName,'') As FHospitalName,IsNull(t3.FName,'') As FModeName,IsNull(t4.FName,'') As FGrandName," +
+                    " IsNull(t6.FName,'') As FAgencyName,IsNull(t7.FName,'') As FDeveloperName,IsNull(t8.FName,'') As FRepresentativeName,IsNull(t9.FName,'') As MarketManagerName" +
+                    " From  t_Hospital t1 " +
+                    " Left Join t_Items t2 On t1.FID= t2.FID" +
+                    " Left Join t_Items t3 On t1.FModeID= t3.FID" +
+                    " Left Join t_Items t4 On t1.FGrandID= t4.FID" +
+                    " Left Join AuthData_Hospital t5 On t1.FID= t5.FHospitalID" +
+                    " Left Join t_Items t6 On t5.FAgencyID= t6.FID" +
+                    " Left Join t_Items t7 On t5.FDeveloperID= t7.FID" +
+                    " Left Join t_Items t8 On t5.FRepresentativeID= t8.FID" +
                     " Left Join t_Items t9 On t5.FMarketManagerID= t9.FID";
 
                 if (filter.Length > 0)
                     sql = sql + " Where " + filter;
 
 
-                
+
                 dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)
                 {
@@ -1441,7 +1451,7 @@ namespace ydb.BLL
                         vNode = doc.CreateElement("MarketManagerName");
                         vNode.InnerText = row["MarketManagerName"].ToString();
                         cNode.AppendChild(vNode);
-                        
+
                     }
                     result = doc.OuterXml;
                 }
@@ -1476,12 +1486,12 @@ namespace ydb.BLL
                 if (vNode != null)
                 {
                     val = vNode.InnerText.Trim();
-                   
+
                     if (val.Length > 0)
                     {
-                        sql = "Select distinct t1.FInstitutionID"+
-                            " From AuthDatas t1"+
-                            " Left Join t_Items t2 On t1.FAuthObjectID= t2.FID"+
+                        sql = "Select distinct t1.FInstitutionID" +
+                            " From AuthDatas t1" +
+                            " Left Join t_Items t2 On t1.FAuthObjectID= t2.FID" +
                             " Where t1.FInstitutionType=2 And t1.FAuthType=1 and  t2.FName like '%" + val + "%'";
                         dt = runner.ExecuteSql(sql);
                         foreach (DataRow row in dt.Rows)
@@ -1548,10 +1558,10 @@ namespace ydb.BLL
                         filter = filter.Length > 0 ? filter = filter + " And t1.FCityID='" + val + "'" : "t1.FCityID='" + val + "'";
                 }
 
-                sql = "Select t1.*,Isnull(t2.FName,'') As FAgencyName,Isnull(t3.FName,'') As FDeveloperName,IsNull(t4.FName,'') As FMarketManagerName"+
-                      "  From AuthData_Region t1"+
-                      "  Left Join t_Items t2 On t1.FAgencyID = t2.FID"+
-                      "  Left Join t_Items t3 On t1.FDeveloperID = t3.FID"+
+                sql = "Select t1.*,Isnull(t2.FName,'') As FAgencyName,Isnull(t3.FName,'') As FDeveloperName,IsNull(t4.FName,'') As FMarketManagerName" +
+                      "  From AuthData_Region t1" +
+                      "  Left Join t_Items t2 On t1.FAgencyID = t2.FID" +
+                      "  Left Join t_Items t3 On t1.FDeveloperID = t3.FID" +
                       "  Left Join t_Items t4 On t1.FMarketManagerID = t4.FID";
 
                 if (filter.Length > 0)
@@ -1620,7 +1630,7 @@ namespace ydb.BLL
         #region GetAuthAgencyList
         public string GetAuthAgencyList(string xmlString)
         {
-            string result = "", sql = "", filter = " t1.FDeleted=0 ", val = "",agencyIds="";
+            string result = "", sql = "", filter = " t1.FDeleted=0 ", val = "", agencyIds = "";
             DataTable dt;
             SQLServerHelper runner;
 
@@ -1640,11 +1650,11 @@ namespace ydb.BLL
                             "Left Join t_Items t2 On t1.FInstitutionID=t2.FID" +
                             " Where t1.FInstitutionType=1 and t1.FAuthType=2  and t2.FName like '%" + val + "%'";
                         dt = runner.ExecuteSql(sql);
-                        foreach(DataRow row in dt.Rows)
+                        foreach (DataRow row in dt.Rows)
                         {
-                            agencyIds = agencyIds +"'"+ row["FAgencyID"].ToString() + "',";
+                            agencyIds = agencyIds + "'" + row["FAgencyID"].ToString() + "',";
                         }
-                        if(agencyIds.Length > 0)
+                        if (agencyIds.Length > 0)
                         {
                             agencyIds = agencyIds.Substring(0, agencyIds.Length - 1);
                             filter = filter.Length > 0 ? filter = filter + " And t2.FInstitutionID In(" + agencyIds + ")" : " t2.FInstitutionID In(" + agencyIds + ")";
@@ -1719,18 +1729,18 @@ namespace ydb.BLL
                         filter = filter.Length > 0 ? filter = filter + " And t1.FCityID='" + val + "'" : "t1.FCityID='" + val + "'";
                 }
 
-                sql = "Select t1.* ,IsNull(t3.FName,'') As FDevelopeName,IsNull(t5.FName,'') As FAgencyName,IsNull(t4.FName,'') As FMarketManagerName"+
-                      "  From t_Agency t1"+
-                      "  Left Join AuthData_Agency t2 On t1.FID=t2.FAgencyID"+
-                      "  Left Join t_Items t3 On t3.FID= t2.FDeveloperID"+
-                      "  Left Join t_Items t4 On t4.FID= t2.FMarketManagerID"+
+                sql = "Select t1.* ,IsNull(t3.FName,'') As FDevelopeName,IsNull(t5.FName,'') As FAgencyName,IsNull(t4.FName,'') As FMarketManagerName" +
+                      "  From t_Agency t1" +
+                      "  Left Join AuthData_Agency t2 On t1.FID=t2.FAgencyID" +
+                      "  Left Join t_Items t3 On t3.FID= t2.FDeveloperID" +
+                      "  Left Join t_Items t4 On t4.FID= t2.FMarketManagerID" +
                       "  Left Join t_Items t5 On t5.FID= t1.FID";
 
                 if (filter.Length > 0)
                     sql = sql + " Where " + filter;
 
 
-                
+
                 dt = runner.ExecuteSql(sql);
                 if (dt.Rows.Count > 0)
                 {
@@ -1754,7 +1764,7 @@ namespace ydb.BLL
                         vNode = doc.CreateElement("FCompanyID");
                         vNode.InnerText = row["FCompanyID"].ToString();
                         cNode.AppendChild(vNode);
-                       
+
 
                         vNode = doc.CreateElement("DeveloperManagerName");
                         vNode.InnerText = row["FDevelopeName"].ToString();
@@ -1766,8 +1776,8 @@ namespace ydb.BLL
 
                         vNode = doc.CreateElement("FAgencyName");
                         vNode.InnerText = row["FAgencyName"].ToString();
-                        cNode.AppendChild(vNode);       
-                       
+                        cNode.AppendChild(vNode);
+
                     }
                     result = doc.OuterXml;
                 }
@@ -1790,7 +1800,7 @@ namespace ydb.BLL
         #region GetMyProductList
         public string GetMyProductList(string xmlString)
         {
-            string val ="";
+            string val = "";
             string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetMyProductList><DataRows>" +
                             "<Result>False</Result>" +
                             "<Description></Description>" +
@@ -1799,7 +1809,7 @@ namespace ydb.BLL
             try
             {
                 XmlDocument doc = new XmlDocument();
-               
+
                 doc.LoadXml(xmlString);
                 XmlNode vNode = doc.SelectSingleNode("GetMyProductList/EmployeeID");
                 if (vNode == null || vNode.InnerText.Trim().Length == 0)
@@ -1818,12 +1828,12 @@ namespace ydb.BLL
                 sql = string.Format(sql, val);
                 SQLServerHelper runner = new SQLServerHelper();
                 DataTable dt = runner.ExecuteSql(sql);
-                if(dt.Rows.Count ==0)
+                if (dt.Rows.Count == 0)
                 {
                     sql = " Select  FID AS  FProductID, FName As FProductName From t_Items Where FClassID = '36d33d13-4f8b-4ee4-84c5-49ff7c8691c4' and FIsDeleted=0";
                     dt = runner.ExecuteSql(sql);
                 }
-                result = Common.DataTableToXml(dt, "GetMyProductList", "", "List"); 
+                result = Common.DataTableToXml(dt, "GetMyProductList", "", "List");
 
             }
             catch (Exception err)

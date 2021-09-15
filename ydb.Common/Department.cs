@@ -620,6 +620,7 @@ namespace ydb.BLL
 
         public string GetTeamMemberList(string xmlString)
         {
+            //////// 未发布修改 ///////////////////
             string result = "", sql = "", leaderID = "";
             string colName = "";
 
@@ -639,9 +640,17 @@ namespace ydb.BLL
                 {
                     leaderID = vNode.InnerText.Trim();
                 }
+                //todo:去掉重复包含关系的部门，人员第二次点击人员ID替换成部门ID查询
+                if (leaderID!="-88")
+                {
+                    sql = @"Select FID From t_Departments Where FSupervisorID ='{0}' and  FIsDeleted = 0";
+                    sql = string.Format(sql, leaderID);
+                }
+                else
+                {
+                    sql = @"Select   FID From t_Departments Where FID ='47a1fd79-7530-4af2-9ed3-95d0fbf9a468' ";
+                }
 
-                sql = @"Select FID From t_Departments Where FSupervisorID ='{0}' and  FIsDeleted = 0";
-                sql = string.Format(sql, leaderID);
 
                 runner = new SQLServerHelper();
                 DataTable deptDt = runner.ExecuteSql(sql);
