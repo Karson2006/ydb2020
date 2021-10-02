@@ -17,6 +17,30 @@ namespace ydb.BLL
             iClass = new Items();
         }
 
+        #region GetListEx
+        /// <summary>
+        /// 获取OA数据库的产品列表
+        /// </summary>
+        /// <param name="xmlString"></param>
+        /// <returns>XML String</returns>
+        public string GetListEx(string xmlString)
+        {
+            string result = "", oawsUrl = "";
+            XmlDocument cfgDoc = new XmlDocument();
+
+            cfgDoc = new XmlDocument();
+            cfgDoc.Load(AppDomain.CurrentDomain.BaseDirectory + "\\cfg.xml");
+            oawsUrl = cfgDoc.SelectSingleNode("Configuration/OAWSUrl").InnerText;
+
+            WebInvoke invoke = new WebInvoke();
+            object[] param = new object[] { xmlString };
+            oawsUrl = oawsUrl + "OWLAppService.asmx";
+            result = invoke.Invoke(oawsUrl, "OWLAppService", "GetOAProductList", param, null, 8000).ToString();
+
+            return result;
+        }
+        #endregion
+
         #region GetDetail
         public string GetDetail(string xmlString)
         {

@@ -8,6 +8,7 @@ using ydb.BLL;
 using System.Xml;
 
 
+
 namespace ydb.WebService
 {
     /// <summary>
@@ -124,8 +125,12 @@ namespace ydb.WebService
             {
                 if (Helper.CheckAuthCode(callType, xmlMessage))//数据校验通过
                 {
-                    AuthData h = new AuthData();
-                    result = h.GetProductListByHospitalID(xmlMessage);
+                    //改为调用OA的产品列表，王天池，2021-10-02
+                    Product prd = new Product();
+                    result = prd.GetListEx(xmlMessage);
+
+                    //AuthData h = new AuthData();
+                    //result = h.GetProductListByHospitalID(xmlMessage);
                 }
             }
             catch (Exception err)
@@ -441,8 +446,12 @@ namespace ydb.WebService
             {
                 if (Helper.CheckAuthCode(callType, xmlMessage))//数据校验通过
                 {
-                    AuthData h = new AuthData();
-                    result = h.GetMyProductList(xmlMessage);
+                    //改为调用OA的产品列表，王天池，2021-10-02
+                    Product prd = new Product();
+                    result = prd.GetListEx(xmlMessage);
+
+                    //AuthData h = new AuthData();
+                    //result = h.GetMyProductList(xmlMessage);
 
                 }
             }

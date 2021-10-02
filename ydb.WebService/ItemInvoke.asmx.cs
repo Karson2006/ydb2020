@@ -564,7 +564,7 @@ namespace ydb.WebService
                 {
                     Product  p = new Product();
 
-                    result = p.GetList(xmlMessage);
+                    result = p.GetListEx(xmlMessage);
                 }
             }
             catch (Exception err)
