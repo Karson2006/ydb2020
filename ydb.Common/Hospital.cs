@@ -48,7 +48,11 @@ namespace ydb.BLL
         #endregion GetHospitalDetail
 
 
-
+        /// <summary>
+        /// 从OA数据库读取医院列表
+        /// </summary>
+        /// <param name="xmlString"></param>
+        /// <returns></returns>
         public string GetHospitalListEx(string xmlString)
         {
             string result = "", oawsUrl = "";

@@ -562,8 +562,8 @@ namespace ydb.WebService
 
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
+                    //改为从OA数据库读取产品列表，王天池，2021-10-02
                     Product  p = new Product();
-
                     result = p.GetListEx(xmlMessage);
                 }
             }

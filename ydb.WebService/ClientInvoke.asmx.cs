@@ -36,10 +36,12 @@ namespace ydb.WebService
                 FileLogger.WriteLog(logID + "|Start:" + xmlMessage, 1, "", callType);
  
                 if (Helper.CheckAuthCode(callType, xmlMessage))
-                {
+                { 
+                    //改为从OA数据库读取医院列表,王天池，2021-10-02
                     Hospital h = new Hospital();
 
                     result = h.GetHospitalListEx(xmlMessage);
+               
                 }
             }
             catch (Exception err)
