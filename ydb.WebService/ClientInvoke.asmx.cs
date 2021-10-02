@@ -39,7 +39,7 @@ namespace ydb.WebService
                 {
                     Hospital h = new Hospital();
 
-                    result = h.GetHospitalList(xmlMessage);
+                    result = h.GetHospitalListEx(xmlMessage);
                 }
             }
             catch (Exception err)
@@ -838,7 +838,6 @@ namespace ydb.WebService
             return result;
         }
         #endregion
-
 
         [WebMethod]
         public string GetMyDoctorList(string xmlMessage)
