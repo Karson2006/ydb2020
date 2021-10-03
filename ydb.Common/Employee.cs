@@ -1027,6 +1027,43 @@ namespace ydb.BLL
 
         #endregion GetInvitationCode
 
+        #region GetRegStatusByMobileEx
+        /// <summary>
+        /// 从OA ORG_Member 读取员工信息，并判断该员工的状态
+        /// </summary>
+        /// <param name="xmlString"></param>
+        /// <returns></returns>
+
+        //<Status>Stutas=0，未注册；1：已注册但未设置密码；2：已设置密码；3：在注册进程中；4：已离职</Status>
+        public string GetRegStatusByMobileEx(string xmlString)
+        {
+            string result = "<?xml version=\"1.0\" encoding=\"utf-8\"?><GetRegStatusByMobile>" +
+                         "<Result>False</Result>" +
+                         "<EmployeeID></EmployeeID>" +
+                         "<ID>-1</ID>" +
+                         "<Status>0</Status>" +
+                         "</GetRegStatusByMobile>";
+            try
+            {
+                string  oawsUrl = "";
+                XmlDocument cfgDoc = new XmlDocument();
+
+                cfgDoc = new XmlDocument();
+                cfgDoc.Load(AppDomain.CurrentDomain.BaseDirectory + "\\cfg.xml");
+                oawsUrl = cfgDoc.SelectSingleNode("Configuration/OAWSUrl").InnerText;
+
+                WebInvoke invoke = new WebInvoke();
+                object[] param = new object[] { xmlString };
+                oawsUrl = oawsUrl + "OWLAppService.asmx";
+                result = invoke.Invoke(oawsUrl, "OWLAppService", "GetRegStatusByMobile", param, null, 8000).ToString();
+
+            }
+            catch(Exception err)
+            {
+                throw err;
+            }
+            return result;
+        }
         #region GetRegStatusByMobile
 
         public string GetRegStatusByMobile(string xmlString)

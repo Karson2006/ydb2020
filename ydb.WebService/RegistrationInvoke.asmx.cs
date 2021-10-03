@@ -49,7 +49,7 @@ namespace ydb.WebService
                 if (Helper.CheckAuthCode(callType, xmlMessage))
                 {
                     Employee em = new Employee();
-                    result = em.GetRegStatusByMobile(xmlMessage);
+                    result = em.GetRegStatusByMobileEx(xmlMessage);
                 }
             }
             catch (Exception err)
